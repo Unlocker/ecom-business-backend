@@ -3,3 +3,7 @@
 modules/flyway/target
 project/target/
 target/
+/.bsp/
+
+.cache
+.history
