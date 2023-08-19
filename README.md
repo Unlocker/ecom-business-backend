@@ -4,23 +4,23 @@
 
 ### Авторизация
 
-Запросы авторизуются с использованием JWT, переданного в заголовке "Authorization: Bearer <JWT_VALUE>". Заголовок "Content-Type" равен "application/json".
+Запросы авторизуются с использованием JWT, переданного в заголовке "Authorization: Bearer JWT_VALUE". Заголовок "Content-Type" равен "application/json".
 
 POST /api/v1/user/sign-in
 
-Request {"login": <string>, "password": <string>} 
+Request {"login": "string", "password": "string"} 
 
-Response {"access_token": <string>, "expires_in": <unixtime>}
+Response {"access_token": "string", "expires_in": unixtime}
 
 ### Регистрация
 
 POST /api/v1/user/sign-up
 
 Request {
-  "login": <string>, 
-  "password": <string>, 
-  "passwordRepeat": <string>, 
-  "name": <string>
+  "login": "string", 
+  "password": "string", 
+  "passwordRepeat": "string", 
+  "name": "string"
 } 
 
 Response {"access_token": <string>, "expires_in": <unixtime>}
@@ -43,7 +43,7 @@ Response code 204 (No Content)
 
 [Auth] GET /api/v1/bank/tochka/authorize
 
-Response {"tokenReceived": <boolean>, "redirectUrl": <url_string>}
+Response {"tokenReceived": boolean, "redirectUrl": "url_string"}
 
 ### Приём колбека от банка
 
@@ -60,5 +60,5 @@ Response {"tokenReceived": <boolean>, "redirectUrl": <url_string>}
 [Auth] GET /api/v1/bank/tochka/balance/{accountId}/statement/{startDate}/{endDate}
 
 * accountId -- идентификатор счёта
-* startDate -- начальная дата периода
-* endDate -- завершающая дата периода
+* startDate -- начальная дата периода, ISO 8601
+* endDate -- завершающая дата периода, ISO 8601
