@@ -1,0 +1,6 @@
+/.idea/
+/.bsp/
+/modules/flyway/target/
+/project/target/
+/target/
+
