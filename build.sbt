@@ -1,7 +1,7 @@
 import scala.collection.immutable.Seq
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := Scala.v3
+ThisBuild / scalaVersion := Scala.v213
 ThisBuild / organization := "com.ecom"
 ThisBuild / organizationName := "ecom"
 ThisBuild / name := "point"

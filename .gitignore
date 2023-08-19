@@ -1,5 +1,5 @@
-/.idea/
-/.bsp/
-/modules/flyway/target/
-/project/target/
-/target/
+.idea/
+.bsp/
+modules/flyway/target
+project/target/
+target/

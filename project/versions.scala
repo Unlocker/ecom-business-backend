@@ -1,5 +1,6 @@
 object Scala{
 	val v3 = "3.3.0"
+	val v213 = "2.13.1"
 }
 
 object Dependencies{
