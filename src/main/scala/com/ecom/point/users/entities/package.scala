@@ -1,21 +1,14 @@
 package com.ecom.point.users
 
-import java.time._
 import zio.json.{JsonDecoder, JsonEncoder}
 import zio.prelude.{Equal, Newtype, Ord}
 
-import java.util.UUID
+import java.time.Instant
 
-object Entities {
+package object entities {
 	implicit val ordInstant: Ord[Instant] = Ord.fromScala[Instant]
 	
-	object AccountId extends Newtype[UUID]{
-		implicit val eq: Equal[AccountId.Type] = Equal.default
-		implicit val jsonEncoder: JsonEncoder[AccountId.Type] = JsonEncoder[UUID].contramap(AccountId.unwrap)
-		implicit val jsonDecoder: JsonDecoder[AccountId.Type] = JsonDecoder[UUID].map(AccountId.wrap)
-	}
-	
-	object PhoneNumber extends Newtype[String]{
+	object PhoneNumber extends Newtype[String] {
 		implicit val eq: Equal[PhoneNumber.Type] = Equal.default
 		implicit val jsonEncoder: JsonEncoder[PhoneNumber.Type] = JsonEncoder[String].contramap(PhoneNumber.unwrap)
 		implicit val jsonDecoder: JsonDecoder[PhoneNumber.Type] = JsonDecoder[String].map(PhoneNumber.wrap)

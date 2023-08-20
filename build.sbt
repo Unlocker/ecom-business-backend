@@ -25,6 +25,7 @@ val commonSettings = Seq(
     "org.postgresql" % "postgresql" % Dependencies.postgresVersion,
     "com.github.jwt-scala" %% "jwt-zio-json" % Dependencies.jwtZioVersion,
     "dev.zio" %% "zio-config" % Dependencies.zioConfigVersion,
+    "dev.zio" %% "zio-schema" % Dependencies.zioSchemaVersion,
     "dev.zio" %% "zio-config-magnolia" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-config-typesafe" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-logging" % Dependencies.zioLoggingVersion,
@@ -44,8 +45,8 @@ lazy val root = (project in file("."))
   )
 
 lazy val flyway = (project in file("modules/flyway"))
-  //  .enablePlugins(FlywayPlugin)
-  .settings(
+    .enablePlugins(FlywayPlugin)
+    .settings(
     name := "flyway",
     version := "0.1.0-SNAPSHOT"
   )

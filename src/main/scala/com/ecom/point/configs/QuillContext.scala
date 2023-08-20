@@ -1,20 +1,19 @@
 package com.ecom.point.configs
 
-import io.getquill.context.sql.SqlContext
+import com.ecom.point.share.repos.TokenDboContext
+import com.ecom.point.users.repos.UserDboContext
 import io.getquill.context.json.PostgresJsonExtensions
+import io.getquill.context.sql.SqlContext
 import io.getquill.jdbczio.Quill
-import io.getquill._
-import io.getquill.{ PostgresZioJdbcContext, SnakeCase}
+import io.getquill.{PostgresZioJdbcContext, SnakeCase}
 import zio.ZLayer
 
 import java.time.{Instant, LocalDate}
-import java.util.UUID
 import javax.sql.DataSource
-import com.ecom.point.banks.{TokenDbo => BankContext}
-import com.ecom.point.users.{AccountDbo => UserContext}
 
-trait Decoders extends BankContext.Decoders with UserContext.Decoders
-trait Encoders extends BankContext.Encoders with UserContext.Encoders
+trait Decoders extends TokenDboContext.Decoders with UserDboContext.Decoders
+
+trait Encoders extends TokenDboContext.Encoders with UserDboContext.Encoders
 
 trait Quotes {
 	this: SqlContext[_, _] =>

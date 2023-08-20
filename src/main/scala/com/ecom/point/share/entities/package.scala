@@ -1,4 +1,4 @@
-package com.ecom.point.banks
+package com.ecom.point.share
 
 import zio.json.{JsonDecoder, JsonEncoder}
 import zio.prelude.{Equal, Newtype, Ord}
@@ -6,8 +6,14 @@ import zio.prelude.{Equal, Newtype, Ord}
 import java.time.Instant
 import java.util.UUID
 
-object Entities {
-	implicit val ordInstant : Ord[Instant] = Ord.fromScala[Instant]
+package object entities {
+	implicit val ordInstant: Ord[Instant] = Ord.fromScala[Instant]
+	
+	object UserId extends Newtype[UUID] {
+		implicit val eq: Equal[UserId.Type] = Equal.default
+		implicit val jsonEncoder: JsonEncoder[UserId.Type] = JsonEncoder[UUID].contramap(UserId.unwrap)
+		implicit val jsonDecoder: JsonDecoder[UserId.Type] = JsonDecoder[UUID].map(UserId.wrap)
+	}
 	
 	object AccessTokenId extends Newtype[UUID] {
 		implicit val eq: Equal[AccessTokenId.Type] = Equal.default
@@ -27,9 +33,9 @@ object Entities {
 		implicit val jsonDecoder: JsonDecoder[RefreshToken.Type] = JsonDecoder[String].map(RefreshToken.wrap)
 	}
 	
-	object CancelAccessTokenDate extends Newtype[Instant] {
-		implicit val ord: Ord[CancelAccessTokenDate.Type] = Ord[Instant].contramap { i => CancelAccessTokenDate.unwrap(i) }
-		implicit val jsonEncoder: JsonEncoder[CancelAccessTokenDate.Type] = JsonEncoder[Instant].contramap(CancelAccessTokenDate.unwrap)
-		implicit val jsonDecoder: JsonDecoder[CancelAccessTokenDate.Type] = JsonDecoder[Instant].map(CancelAccessTokenDate.wrap)
+	object ExpirationTokenDate extends Newtype[Instant] {
+		implicit val ord: Ord[ExpirationTokenDate.Type] = Ord[Instant].contramap { i => ExpirationTokenDate.unwrap(i) }
+		implicit val jsonEncoder: JsonEncoder[ExpirationTokenDate.Type] = JsonEncoder[Instant].contramap(ExpirationTokenDate.unwrap)
+		implicit val jsonDecoder: JsonDecoder[ExpirationTokenDate.Type] = JsonDecoder[Instant].map(ExpirationTokenDate.wrap)
 	}
 }

@@ -1,6 +1,6 @@
 package com.ecom.point
 import com.ecom.point.configs.HttpConfig
-import com.ecom.point.users.AccountRepository
+import com.ecom.point.users.repos.AccountRepository
 import zio.http.Http
 import zio.http.netty.*
 

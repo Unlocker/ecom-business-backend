@@ -8,6 +8,7 @@ object Dependencies{
 	val zioVersion = "2.0.15"
 	val zioPrelude = "1.0.0-RC19"
 	val zioJsonVersion = "0.6.0"
+	val zioSchemaVersion = "0.4.13"
 	val quillVersion = "4.6.0"
 	val postgresVersion = "42.4.0"
 	val logbackVersion = "1.2.11"
