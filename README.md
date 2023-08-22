@@ -41,7 +41,7 @@ Response code 204 (No Content)
 
 Если пользователь имеет действующий токен, то tokenReceived=true. Если необходимо получить новый токен, то формируется ссылка redirectUrl для перенаправления пользователя.
 
-[Auth] GET /api/v1/bank/tochka/authorize
+[Auth] GET /api/v1/bank/TOCHKA/authorize
 
 Response {"tokenReceived": boolean, "redirectUrl": "url_string"}
 
@@ -49,13 +49,13 @@ Response {"tokenReceived": boolean, "redirectUrl": "url_string"}
 
 Используется code для получения и сохранения токена.
 
-[Auth] GET /api/v1/bank/tochka/accept-oauth?code={code:string}&state={state:string}
+[Auth] GET /api/v1/bank/TOCHKA/accept-oauth?code={code:string}&state={state:string}
 
 Response 200 {}
 
 ### Запрос баланса
 
-[Auth] GET /api/v1/bank/tochka/balance
+[Auth] GET /api/v1/bank/TOCHKA/balance
 
 [
   {
@@ -70,7 +70,7 @@ Response 200 {}
 
 ### Запрос истории операций по счёту
 
-[Auth] GET /api/v1/bank/tochka/balance/{accountId}/statement/{startDate}/{endDate}
+[Auth] GET /api/v1/bank/TOCHKA/balance/{accountId}/statement/{startDate}/{endDate}
 
 * accountId -- идентификатор счёта
 * startDate -- начальная дата периода, ISO 8601
