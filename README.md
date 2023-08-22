@@ -23,7 +23,7 @@ Request {
   "name": "string"
 } 
 
-Response {"access_token": <string>, "expires_in": <unixtime>}
+Response {"access_token": {token:string}, "expires_in": {expires:unixtime}}
 
 ### Выход
 
@@ -49,11 +49,24 @@ Response {"tokenReceived": boolean, "redirectUrl": "url_string"}
 
 Используется code для получения и сохранения токена.
 
-[Auth] GET /api/v1/bank/tochka/accept-oauth?code=<string>&state=<string>
+[Auth] GET /api/v1/bank/tochka/accept-oauth?code={code:string}&state={state:string}
+
+Response 200 {}
 
 ### Запрос баланса
 
 [Auth] GET /api/v1/bank/tochka/balance
+
+[
+  {
+    "accountId": "40817810802000000008/044525104",
+    "bank": "TOCHKA",
+    "amount": {
+      "amount": 13600,
+      "currency": "RUB"
+    }
+  }
+]
 
 ### Запрос истории операций по счёту
 
@@ -62,3 +75,21 @@ Response {"tokenReceived": boolean, "redirectUrl": "url_string"}
 * accountId -- идентификатор счёта
 * startDate -- начальная дата периода, ISO 8601
 * endDate -- завершающая дата периода, ISO 8601
+
+[
+  {
+    "statementDate": "2023-08-22",
+    "counterParty": {
+      "name": "ООО Ромашка",
+      "taxId": "1234567890"
+    },
+    "direction": "INCOME" // "OUTCOME",
+    "accountId": "40817810802000000008/044525104",
+    "bank": "TOCHKA",
+    "amount": {
+      "amount": 13600,
+      "currency": "RUB"
+    },
+    "statementId": "ABCD21345"
+  }
+]
