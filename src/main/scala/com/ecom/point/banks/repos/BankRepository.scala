@@ -24,7 +24,7 @@ trait BankRepository {
 }
 
 object BankRepository {
-	val layer = ZLayer.fromFunction(TokenRepositoryImpl.apply _)
+	val layer: ZLayer[DataSource, Nothing, TokenRepositoryImpl] = ZLayer.fromFunction(TokenRepositoryImpl.apply _)
 }
 
 final case class TokenRepositoryImpl(dataSource: DataSource) extends BankRepository {

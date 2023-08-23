@@ -1,17 +1,33 @@
 package com.ecom.point.utils
 
 import com.ecom.point.configs.QuillContext
+import org.postgresql.util.PSQLException
 
-trait DBErrors[-E, +E2] extends Exception{
-	def descriptionError: E => E2
-}
+trait AppError extends Exception
 
-object Errors {
-	case class RepositoryError(code: Int = 0, message: String = "") extends DBErrors[QuillContext.Error, RepositoryError] {
-		self =>
-		
-		override def descriptionError: QuillContext.Error => RepositoryError =
-			err => self.copy(code = err.getErrorCode, message = err.getMessage)
-		
+
+trait RepositoryError extends AppError
+object RepositoryError {
+	def apply(error: QuillContext.Error): RepositoryError = {
+		error match {
+			case c: PSQLException if c.getErrorCode == 23505 => PhoneNumberMustBeUnique(c.getErrorCode, "Указанный номер зарегистрирован на другое лицо в нашей системе")
+		}
 	}
+	final case class PhoneNumberMustBeUnique(code: Int, message: String) extends RepositoryError
+	
 }
+
+
+
+
+trait ServiceError extends AppError
+final case class Unauthorized(code: Int = 501, message: String = "Unauthorized") extends ServiceError
+
+
+	
+
+	
+	
+
+	
+

@@ -5,7 +5,7 @@ import com.ecom.point.users.repos.UserDboContext
 import io.getquill.context.json.PostgresJsonExtensions
 import io.getquill.context.sql.SqlContext
 import io.getquill.jdbczio.Quill
-import io.getquill.{PostgresZioJdbcContext, SnakeCase}
+import io.getquill.{PostgresZioJdbcContext, Quoted, SnakeCase}
 import zio.ZLayer
 
 import java.time.{Instant, LocalDate}
@@ -18,32 +18,32 @@ trait Encoders extends TokenDboContext.Encoders with UserDboContext.Encoders
 trait Quotes {
 	this: SqlContext[_, _] =>
 	implicit class InstantContext (left: Instant) {
-		def >(right: Instant) = quote(sql"$left > $right".as[Boolean])
-		def <(right: Instant) = quote(sql"$left < $right".as[Boolean])
-		def >=(right: Instant) = quote(sql"$left >= $right".as[Boolean])
-		def <=(right: Instant) = quote(sql"$left <= $right".as[Boolean])
+		def >(right: Instant): Quoted[Boolean] = quote(sql"$left > $right".as[Boolean])
+		def <(right: Instant): Quoted[Boolean] = quote(sql"$left < $right".as[Boolean])
+		def >=(right: Instant): Quoted[Boolean] = quote(sql"$left >= $right".as[Boolean])
+		def <=(right: Instant): Quoted[Boolean] = quote(sql"$left <= $right".as[Boolean])
 	}
 	
 	implicit class LocalDateContext (left: LocalDate) {
-		def >(right: LocalDate) = quote(sql"$left > $right".as[Boolean])
-		def <(right: LocalDate) = quote(sql"$left < $right".as[Boolean])
-		def >=(right: LocalDate) = quote(sql"$left >= $right".as[Boolean])
-		def <=(right: LocalDate) = quote(sql"$left <= $right".as[Boolean])
-		def >(right: Option[LocalDate]) = quote(sql"$left < $right".as[Boolean])
-		def <(right: Option[LocalDate]) = quote(sql"$left < $right".as[Boolean])
-		def >=(right: Option[LocalDate]) = quote(sql"$left >= $right".as[Boolean])
-		def <=(right: Option[LocalDate]) = quote(sql"$left <= $right".as[Boolean])
+		def >(right: LocalDate): Quoted[Boolean] = quote(sql"$left > $right".as[Boolean])
+		def <(right: LocalDate): Quoted[Boolean] = quote(sql"$left < $right".as[Boolean])
+		def >=(right: LocalDate): Quoted[Boolean] = quote(sql"$left >= $right".as[Boolean])
+		def <=(right: LocalDate): Quoted[Boolean] = quote(sql"$left <= $right".as[Boolean])
+		def >(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left < $right".as[Boolean])
+		def <(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left < $right".as[Boolean])
+		def >=(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left >= $right".as[Boolean])
+		def <=(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left <= $right".as[Boolean])
 	}
 	
 	implicit class OptionLocalDateContext (left: Option[LocalDate]) {
-		def >(right: LocalDate) = quote(sql"$left > $right".as[Boolean])
-		def <(right: LocalDate) = quote(sql"$left < $right".as[Boolean])
-		def <=(right: LocalDate) = quote(sql"$left < $right".as[Boolean])
-		def >=(right: LocalDate) = quote(sql"$left >= $right".as[Boolean])
-		def >(right: Option[LocalDate]) = quote(sql"$left > $right".as[Boolean])
-		def <(right: Option[LocalDate]) = quote(sql"$left < $right".as[Boolean])
-		def >=(right: Option[LocalDate]) = quote(sql"$left >= $right".as[Boolean])
-		def <=(right: Option[LocalDate]) = quote(sql"$left <= $right".as[Boolean])
+		def >(right: LocalDate): Quoted[Boolean] = quote(sql"$left > $right".as[Boolean])
+		def <(right: LocalDate): Quoted[Boolean] = quote(sql"$left < $right".as[Boolean])
+		def <=(right: LocalDate): Quoted[Boolean] = quote(sql"$left < $right".as[Boolean])
+		def >=(right: LocalDate): Quoted[Boolean] = quote(sql"$left >= $right".as[Boolean])
+		def >(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left > $right".as[Boolean])
+		def <(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left < $right".as[Boolean])
+		def >=(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left >= $right".as[Boolean])
+		def <=(right: Option[LocalDate]): Quoted[Boolean] = quote(sql"$left <= $right".as[Boolean])
 	}
 }
 
