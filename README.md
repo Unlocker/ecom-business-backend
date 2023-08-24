@@ -78,8 +78,8 @@ Response 200 {}
 
 [
   {
-    "statementDate": "2023-08-22",
-    "counterParty": {
+    "date": "2023-08-22",
+    "counterparty": {
       "name": "ООО Ромашка",
       "taxId": "1234567890"
     },

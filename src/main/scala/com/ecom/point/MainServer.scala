@@ -8,6 +8,7 @@ import zio.{&, ZEnvironment, ZIO, ZLayer, http}
 import zio.http.{Http, Server}
 
 import javax.sql.DataSource
+import scala.language.postfixOps
 
 
 final case class MainServer(
