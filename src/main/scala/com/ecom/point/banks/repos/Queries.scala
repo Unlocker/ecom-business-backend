@@ -34,41 +34,45 @@ object Queries {
 	implicit val update: UpdateMeta[TokenDbo] = updateMeta(_.id, _.userId)
 	
 	
-	def getBankAccessTokens: EntityQuery[TokenDbo] = quote {
+	def getBankAccessTokens: EntityQuery[TokenDbo] = quote (
 		query[TokenDbo]
-	}
+	)
 	
-	def getBankAccessTokenById(id: AccessTokenId.Type): Quoted[EntityQuery[TokenDbo]] = quote {
+	def getBankAccessTokenById(id: AccessTokenId.Type): Quoted[EntityQuery[TokenDbo]] = quote (
 		query[TokenDbo]
 			.filter(_.id == lift(id))
-	}
+	)
 	
-	def getBankAccessTokenByUserId(userId: UserId.Type): Quoted[EntityQuery[TokenDbo]] = quote {
+	def getBankAccessTokenByUserId(userId: UserId.Type): Quoted[EntityQuery[TokenDbo]] = quote (
 		query[TokenDbo]
 			.filter(_.userId == lift(userId))
-	}
+	)
 	
-	def createBankAccessToken(bankAccessToken: BankAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = quote {
+	def createBankAccessToken(bankAccessToken: BankAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = {
 		val tokenDbo = bankAccessToken.toDbo
-		query[TokenDbo]
-			.insertValue(lift(tokenDbo))
-			.returning(tk => tk)
+		quote(
+			query[TokenDbo]
+				.insertValue(lift(tokenDbo))
+				.returning(tk => tk)
+		)
 	}
 	
-	def updateBankAccessToken(bankAccessToken: BankAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = quote {
+	def updateBankAccessToken(bankAccessToken: BankAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] =  {
 		val tokenDbo = bankAccessToken.toDbo
-		query[TokenDbo]
-			.filter(_.id == lift(tokenDbo.id))
-			.updateValue(lift(tokenDbo))
-			.returning(acc => acc)
+		quote(
+			query[TokenDbo]
+				.filter(_.id == lift(tokenDbo.id))
+				.updateValue(lift(tokenDbo))
+				.returning(acc => acc)
+		)
 	}
 	
-	def deleteBankAccessToken(id: AccessTokenId.Type): Quoted[ActionReturning[TokenDbo, Index]] = quote {
+	def deleteBankAccessToken(id: AccessTokenId.Type): Quoted[ActionReturning[TokenDbo, Index]] = quote (
 		query[TokenDbo]
 			.filter(_.id == lift(id))
 			.delete
 			.returning(_ => 1)
-	}
+	)
 	
 	
 }

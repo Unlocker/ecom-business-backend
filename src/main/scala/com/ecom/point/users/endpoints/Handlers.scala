@@ -1,7 +1,7 @@
 package com.ecom.point.users.endpoints
 
 import com.ecom.point.Middlewares
-import com.ecom.point.users.endpoints.EndpointData.{SignInUpResponse, SignUpRequest}
+import com.ecom.point.users.endpoints.EndpointData.{SignInUpResponse, SignUpRequest, SignUpRequest}
 import com.ecom.point.users.services.UserService
 import zio.{ZIO, ZNothing, http}
 import zio.http.RequestHandlerMiddlewares

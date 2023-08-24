@@ -1,18 +1,11 @@
 package com.ecom.point.share.repos
 
 import com.ecom.point.configs.QuillContext._
-import com.ecom.point.share.entities
-import com.ecom.point.share.entities.{AccessToken, AccessTokenId, ExpirationTokenDate, RefreshToken, UserId}
-import com.ecom.point.share.repos.TokenDbo
-import com.ecom.point.users.entities.PhoneNumber
-import com.ecom.point.users.models.{User, UserAccessToken}
+import com.ecom.point.share.entities.{AccessToken, AccessTokenId, UserId}
+import com.ecom.point.users.models.UserAccessToken
+import com.ecom.point.users.repos.UserDbo
 import com.ecom.point.users.repos.UserDbo._
 import io.getquill._
-import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtTime}
-import zio.json._
-
-import java.security.MessageDigest
-import java.time.{Clock, Instant}
 
 object Queries {
 	implicit val userAccessTokenSchema: SchemaMeta[TokenDbo] = {
@@ -41,51 +34,57 @@ object Queries {
 	
 	implicit val updateToken: UpdateMeta[TokenDbo] = updateMeta(_.id, _.userId)
 	
-	private lazy val userTokens = quote{ query[TokenDbo] }
+	private lazy val userTokens = quote(query[TokenDbo])
 	
 	
-	def getUserAccessTokenByValue(userAccessToken: AccessToken.Type): Quoted[Query[(TokenDbo, UserDbo)]] =  quote {
+	def getUserAccessTokenByValue(userAccessToken: AccessToken.Type): Quoted[Query[(TokenDbo, UserDbo)]] = {
 		val q = com.ecom.point.users.repos.Queries
-		userTokens
-			.filter(_.accessToken == lift(userAccessToken))
-			.join(q.users).on(_.userId == _.id)
+		quote(
+			userTokens
+				.filter(_.accessToken == lift(userAccessToken))
+				.join(q.users).on(_.userId == _.id)
+		)
 	}
 	
-	def getUserAccessTokens: Quoted[EntityQuery[TokenDbo]] = quote {
+	def getUserAccessTokens: Quoted[EntityQuery[TokenDbo]] = quote(
 		userTokens
-	}
+	)
 	
-	def createUserAccessToken(userAccessToken: UserAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = quote {
+	def createUserAccessToken(userAccessToken: UserAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = {
 		val tokenDbo = userAccessToken.toDbo
-		userTokens
-			.insertValue(lift(tokenDbo))
-			.returning(t => t)
+		quote(
+			userTokens
+				.insertValue(lift(tokenDbo))
+				.returning(t => t)
+		)
 	}
 	
-	def getUserAccessTokenById(id: AccessTokenId.Type): Quoted[EntityQuery[TokenDbo]] = quote {
+	def getUserAccessTokenById(id: AccessTokenId.Type): Quoted[EntityQuery[TokenDbo]] = quote(
 		userTokens
 			.filter(_.id == lift(id))
-	}
+	)
 	
-	def getUserAccessTokenByUserId(id: UserId.Type): Quoted[EntityQuery[TokenDbo]] = quote {
+	def getUserAccessTokenByUserId(id: UserId.Type): Quoted[EntityQuery[TokenDbo]] = quote(
 		userTokens
 			.filter(_.userId == lift(id))
-	}
+	)
 	
-	def updateUserAccessToken(userAccessToken: UserAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = quote {
+	def updateUserAccessToken(userAccessToken: UserAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = {
 		val tokenDbo = userAccessToken.toDbo
-		userTokens
-			.filter(_.id == lift(tokenDbo.id))
-			.updateValue(lift(tokenDbo))
-			.returning(acc => acc)
+		quote(
+			userTokens
+				.filter(_.id == lift(tokenDbo.id))
+				.updateValue(lift(tokenDbo))
+				.returning(acc => acc)
+		)
 	}
 	
-	def deleteUserAceessToken(id: AccessTokenId.Type): Quoted[ActionReturning[TokenDbo, Index]] = quote {
+	def deleteUserAceessToken(id: AccessTokenId.Type): Quoted[ActionReturning[TokenDbo, Index]] = quote(
 		userTokens
 			.filter(_.id == lift(id))
 			.delete
 			.returning(_ => 1)
-	}
+	)
 	
 }
 

@@ -41,39 +41,42 @@ object Queries {
 	implicit val updateUser: UpdateMeta[UserDbo] = updateMeta(_.id, _.phoneNumber, _.createdAt)
 	
 	
-	lazy val users: Quoted[EntityQuery[UserDbo]] = quote {
+	lazy val users: Quoted[EntityQuery[UserDbo]] = quote (
 		query[UserDbo]
-	}
+	)
 	
 	
-	def getUsers: EntityQuery[UserDbo] = quote {
-		users
-	}
+	def getUsers: Quoted[EntityQuery[UserDbo]] = quote (users)
+
 	
-	def getUserById(id: UserId.Type): Quoted[EntityQuery[UserDbo]] = quote {
+	def getUserById(id: UserId.Type): Quoted[EntityQuery[UserDbo]] = quote (
 		users
 			 .filter(_.id == lift(id))
-	 }
+	)
 	
-	def createUser(user: User): Quoted[ActionReturning[UserDbo, UserDbo]] = quote {
+	def createUser(user: User): Quoted[ActionReturning[UserDbo, UserDbo]] = {
 		val userDbo = user.toDbo
-		users
-			.insertValue(lift(userDbo))
-			 .returning(acc => acc)
+		quote (
+			users
+				.insertValue(lift(userDbo))
+				 .returning(acc => acc)
+			)
 	 }
 	
-	def updateUser(account: User): Quoted[ActionReturning[UserDbo, UserDbo]] = quote {
+	def updateUser(account: User): Quoted[ActionReturning[UserDbo, UserDbo]] = {
 		val userDbo = account.toDbo
-		users
+		quote(
+			users
 			.filter(_.id == lift(userDbo.id))
 			.updateValue(lift(userDbo))
-			 .returning(acc => acc)
-	 }
+			.returning(acc => acc)
+		)
+	}
 	
-	def deleteUser(accountId: UserId.Type): Quoted[ActionReturning[UserDbo, Index]] = quote {
+	def deleteUser(accountId: UserId.Type): Quoted[ActionReturning[UserDbo, Index]] = quote (
 		users
 			 .filter(_.id == accountId)
 			 .delete
 			 .returning(_ => 1)
-	 }
+	)
 }

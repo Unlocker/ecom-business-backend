@@ -26,6 +26,7 @@ val commonSettings = Seq(
     "com.github.jwt-scala" %% "jwt-zio-json" % Dependencies.jwtZioVersion,
     "dev.zio" %% "zio-config" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-schema" % Dependencies.zioSchemaVersion,
+    "dev.zio" %% "zio-schema-derivation" % Dependencies.zioSchemaVersion,
     "dev.zio" %% "zio-config-magnolia" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-config-typesafe" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-logging" % Dependencies.zioLoggingVersion,

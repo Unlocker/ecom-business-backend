@@ -3,6 +3,7 @@ package com.ecom.point.users.repos
 import com.ecom.point.configs.QuillContext._
 import com.ecom.point.share.entities.UserId
 import com.ecom.point.users.models.User
+import com.ecom.point.users.models.User.converterFromDbo
 import com.ecom.point.utils.RepositoryError
 import com.ecom.point.utils.SchemeConverter._
 import zio.{IO, Task, ZEnvironment, ZIO, ZLayer}
@@ -14,7 +15,7 @@ trait UserRepository {
 	
 	def deleteUser(userId: UserId.Type): IO[RepositoryError, Int]
 	
-	def getUsers: Task[Seq[User]]
+//	def getUsers: Task[Seq[User]]
 	
 	def getUserById(userId: UserId.Type): Task[Option[User]]
 	
@@ -26,7 +27,7 @@ object UserRepository {
 	
 	def deleteUser(userId: UserId.Type) = ZIO.serviceWithZIO[UserRepository](_.deleteUser(userId))
 	
-	def getUsers: Task[Seq[User]] = ZIO.serviceWithZIO[UserRepository](_.getUsers)
+//	def getUsers: Task[Seq[User]] = ZIO.serviceWithZIO[UserRepository](_.getUsers)
 	
 	def getUserById(userId: UserId.Type) = ZIO.serviceWithZIO[UserRepository](_.getUserById(userId))
 	
@@ -39,20 +40,20 @@ case class UserRepositoryLive(dataSource: DataSource) extends UserRepository {
 	override def createUser(user: User): IO[RepositoryError, User] = {
 		run(Queries.createUser(user))
 			.provideEnvironment(envDataSource)
-			.asModelWithMapError(RepositoryError(_))
+			.asModelWithMapError(err => RepositoryError(err))
 	}
 	
 	override def deleteUser(userId: UserId.Type): IO[RepositoryError, Int] = {
 		run(Queries.deleteUser(userId))
 			.provideEnvironment(envDataSource)
-			.asModelWithMapError(RepositoryError(_))
+			.asModelWithMapError(err => RepositoryError(err))
 	}
 	
-	override def getUsers: Task[Seq[User]] = {
-		run(Queries.getUsers)
-			.provideEnvironment(envDataSource)
-			.asModel
-	}
+//	override def getUsers: Task[Seq[User]] = {
+//		run(Queries.getUsers)
+//			.provideEnvironment(envDataSource)
+//			.asModel
+//	}
 	
 	override def getUserById(userId: UserId.Type): Task[Option[User]] = {
 		run(Queries.getUserById(userId))
@@ -64,7 +65,7 @@ case class UserRepositoryLive(dataSource: DataSource) extends UserRepository {
 	override def updateUser(user: User): IO[RepositoryError, User] = {
 		run(Queries.updateUser(user))
 			.provideEnvironment(envDataSource)
-			.asModelWithMapError(RepositoryError(_))
+			.asModelWithMapError(err => RepositoryError(err))
 	}
 }
 

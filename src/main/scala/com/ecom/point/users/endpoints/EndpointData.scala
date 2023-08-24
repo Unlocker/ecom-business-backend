@@ -1,24 +1,25 @@
 package com.ecom.point.users.endpoints
-
+import zio.prelude._
 import com.ecom.point.share.entities.AccessToken
 import com.ecom.point.users.entities.{Name, Password, PhoneNumber}
 import zio.schema.{DeriveSchema, Schema}
 
 
+
 object EndpointData {
-	final case class SignUpRequest(phoneNumber: PhoneNumber.Type, name: Name.Type, password: Password.Type, passwordAgain: Password.Type)
+	final case class SignUpRequest(phoneNumber: PhoneNumber, name: Name, password: Password, passwordAgain: Password)
 	object SignUpRequest {
 		implicit val signUpRequestSchema: Schema[SignUpRequest] = DeriveSchema.gen[SignUpRequest]
 	}
 	
-	final case class SignInRequest(phoneNumber: PhoneNumber.Type, password: Password.Type)
+	final case class SignInRequest(phoneNumber: PhoneNumber, password: Password)
 	object SignInRequest {
-		implicit val signInRequestSchema: Schema[SignInRequest] = DeriveSchema.gen[SignInRequest]
+		implicit val signUpRequestSchema: Schema[SignInRequest] = DeriveSchema.gen[SignInRequest]
 	}
-
-	final case class SignInUpResponse(userAccessJwtToken: AccessToken.Type)
+	
+	final case class SignInUpResponse(userAccessJwtToken: AccessToken)
 	object SignInUpResponse {
-		implicit val signInUpResponseSchema: Schema[SignInUpResponse] = DeriveSchema.gen[SignInUpResponse]
+		implicit val signUpRequestSchema: Schema[SignInUpResponse] = DeriveSchema.gen[SignInUpResponse]
 	}
 	
 }

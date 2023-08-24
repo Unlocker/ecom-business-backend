@@ -1,21 +1,17 @@
 package com.ecom.point.share.services
 
-import com.ecom.point.configs.AuthConfig
-import com.ecom.point.configs.QuillContext.{run, _}
-import com.ecom.point.share.entities
-import com.ecom.point.share.entities.{AccessToken, ExpirationTokenDate, RefreshToken, UserId}
+import com.ecom.point.configs.QuillContext._
+import com.ecom.point.share.entities._
 import com.ecom.point.share.repos.Queries
-import com.ecom.point.users.entities.PhoneNumber
-import com.ecom.point.users.entities.PhoneNumber._
-import zio.prelude._
-import com.ecom.point.users.models.UserAccessToken
+import com.ecom.point.users.entities._
+import com.ecom.point.users.models.{User, UserAccessToken}
 import com.ecom.point.users.models.UserAccessToken._
-import com.ecom.point.users.repos.UserRepositoryImpl
-import com.ecom.point.utils.{AppError, RepositoryError, ServiceError, Unauthorized}
-import com.ecom.point.utils.SchemeConverter.SchemaF
+import com.ecom.point.utils.SchemeConverter._
+import com.ecom.point.utils.{AppError, Unauthorized}
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtTime}
-import zio.{IO, ZEnvironment, ZIO, ZLayer}
 import zio.json._
+import zio.prelude._
+import zio.{IO, ZEnvironment, ZIO, ZLayer}
 
 import java.security.MessageDigest
 import java.time.{Clock, Instant}
@@ -33,9 +29,9 @@ final case class AuthServiceImpl(dataSource: DataSource) extends AuthService {
 	
 	private val envDataSource: ZEnvironment[DataSource] = zio.ZEnvironment(dataSource)
 	
-	private[this] class SecretKey(val value: RefreshToken.Type)
+	private[this] class SecretKey(val value: RefreshToken)
 	private[this] object SecretKey {
-		def apply(userId: UserId.Type, expirationTokenDate: ExpirationTokenDate.Type): SecretKey = {
+		def apply(userId: UserId, expirationTokenDate: ExpirationTokenDate): SecretKey = {
 			new SecretKey(RefreshToken(
 				MessageDigest
 					.getInstance("MD5")
@@ -44,10 +40,12 @@ final case class AuthServiceImpl(dataSource: DataSource) extends AuthService {
 			)
 		}
 		
-		def apply(refreshToken: RefreshToken.Type) = { new SecretKey(refreshToken)}
+		def apply(refreshToken: RefreshToken) = {
+			new SecretKey(refreshToken)
+		}
 	}
 	
-	private def jwtEncode(phoneNumber: PhoneNumber.Type): SecretKey => (AccessToken.Type, ExpirationTokenDate.Type) = { key =>
+	private def jwtEncode(phoneNumber: PhoneNumber): SecretKey => (AccessToken, ExpirationTokenDate) = { key =>
 		val json = phoneNumber.toJson
 		implicit val clock: Clock = Clock.systemUTC()
 		val claim = JwtClaim {
@@ -56,15 +54,16 @@ final case class AuthServiceImpl(dataSource: DataSource) extends AuthService {
 		(AccessToken(Jwt.encode(claim, RefreshToken.unwrap(key.value), JwtAlgorithm.HS512)), ExpirationTokenDate(clock.instant()))
 	}
 	
-	private def jwtDecode(userAccessToken: AccessToken.Type): SecretKey => Option[JwtClaim] = { key =>
+	private def jwtDecode(userAccessToken: AccessToken): SecretKey => Option[JwtClaim] = { key =>
 		Jwt.decode(AccessToken.unwrap(userAccessToken), RefreshToken.unwrap(key.value), Seq(JwtAlgorithm.HS512)).toOption
 	}
 	
-	override def auth(userAccessToken: AccessToken.Type): IO[AppError, AccessToken.Type] = {
+	override def auth(userAccessToken: AccessToken): IO[AppError, AccessToken] = {
 		run(Queries.getUserAccessTokenByValue(userAccessToken))
 			.provideEnvironment(envDataSource)
+			.map(_.headOption)
 			.flatMap { tokenWithUser =>
-				tokenWithUser.headOption match {
+				tokenWithUser match {
 					case None => ZIO.fail(Unauthorized())
 					case Some((token, user)) => {
 						if (token.expirationTokenDate < ExpirationTokenDate(Instant.now())) {
@@ -74,7 +73,7 @@ final case class AuthServiceImpl(dataSource: DataSource) extends AuthService {
 								ZIO.attempt(token.accessToken).orElseFail(Unauthorized())
 							} else {
 								val newAccessToken = jwtEncode(user.phoneNumber)(SecretKey(token.refreshToken))
-								val newToken = Seq(token.copy(accessToken = newAccessToken._1)).asModel
+								val newToken = Seq(token.copy(accessToken = newAccessToken._1)).asModel(UserAccessToken.converterFromDbo)
 								run(Queries.updateUserAccessToken(newToken.head))
 									.provideEnvironment(envDataSource)
 									.mapBoth(_ => Unauthorized(), _ => newAccessToken._1)

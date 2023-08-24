@@ -3,7 +3,7 @@ package com.ecom.point.banks.repos
 import com.ecom.point.banks.models.BankAccessToken
 import com.ecom.point.configs.QuillContext._
 import com.ecom.point.share.entities.{AccessTokenId, UserId}
-import com.ecom.point.utils.Errors.RepositoryError
+import com.ecom.point.utils.RepositoryError
 import com.ecom.point.utils.SchemeConverter._
 import zio.{IO, Task, ZEnvironment, ZLayer}
 
@@ -33,12 +33,12 @@ final case class TokenRepositoryImpl(dataSource: DataSource) extends BankReposit
 	override def createBankAccessToken(token: BankAccessToken): IO[RepositoryError, BankAccessToken] =
 		run(Queries.createBankAccessToken(token))
 			.provideEnvironment(envDataSource)
-			.asModelWithMapError(err => RepositoryError(err.getErrorCode, err.getMessage))
+			.asModelWithMapError(RepositoryError(_))
 	
 	override def deleteBankAccessToken(tokenId: AccessTokenId.Type): IO[RepositoryError, Index] = {
 		run(Queries.deleteBankAccessToken(tokenId))
 			.provideEnvironment(envDataSource)
-			.asModelWithMapError(err => RepositoryError(err.getErrorCode, err.getMessage))
+			.asModelWithMapError(RepositoryError(_))
 	}
 	
 	override def getBankAccessTokens: Task[Seq[BankAccessToken]] = {
@@ -61,9 +61,9 @@ final case class TokenRepositoryImpl(dataSource: DataSource) extends BankReposit
 			.asModel
 	}
 	
-	override def updateBankAccessTokenToken(bankAccessToken: BankAccessToken): IO[RepositoryError, BankAccessToken] = {
+	override def updateBankAccessToken(bankAccessToken: BankAccessToken): IO[RepositoryError, BankAccessToken] = {
 		run(Queries.updateBankAccessToken(bankAccessToken))
 			.provideEnvironment(envDataSource)
-			.asModelWithMapError(err => RepositoryError(err.getErrorCode, err.getMessage))
+			.asModelWithMapError(RepositoryError(_))
 	}
 }
