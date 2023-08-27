@@ -1,40 +1,27 @@
 package com.ecom.point.users
 
 import com.ecom.point.utils.types._
-import zio.json.JsonCodec
-import zio.prelude.{Equal, Ord}
-import zio.schema.Schema
-
-import java.time.Instant
 
 package object entities {
-	implicit val ordInstant: Ord[Instant] = Ord.fromScala[Instant]
 	
+	object PhoneNumber extends StringType
 	type PhoneNumber = PhoneNumber.Type
-	object PhoneNumber extends RichNewtype[String]
 	
+	object Password extends StringType
 	type Password  = Password.Type
-	object Password extends RichNewtype[String]
 	
+	object Name extends StringType
 	type Name = Name.Type
-	object Name extends RichNewtype[String]
 	
+	object ActivateDate extends InstantType
 	type ActivateDate = ActivateDate.Type
-	object ActivateDate extends RichNewtype[Instant]
 	
+	object BlockDate extends InstantType
 	type BlockDate = BlockDate.Type
 	
-	object BlockDate extends RichNewtype[Instant] {
-		implicit val ord: Ord[BlockDate] = Ord[Instant].contramap {unwrap}
-	}
-	
+	object CreatedDate extends InstantType
 	type CreatedDate = CreatedDate.Type
-	object CreatedDate extends RichNewtype[Instant] {
-		implicit val ord: Ord[CreatedDate] = Ord[Instant].contramap {unwrap}
-	}
 	
+	object LastLoginDate extends InstantType
 	type LastLoginDate = LastLoginDate.Type
-	object LastLoginDate extends RichNewtype[Instant] {
-		implicit val ord: Ord[LastLoginDate] = Ord[Instant].contramap {unwrap}
-	}
 }

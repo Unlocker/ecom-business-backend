@@ -7,10 +7,10 @@ import zio.config.typesafe._
 final case class HttpConfig(host: String, port: Int)
 
 object HttpConfig {
-	val layer =
-		ZLayer.fromZIO(
-			TypesafeConfigProvider
-				.fromResourcePath()
-				.load(deriveConfig[HttpConfig])
-		)
+//	val layer =
+//		ZLayer.fromZIO(
+//			TypesafeConfigProvider
+//				.fromResourcePath()
+//				.load(deriveConfig[HttpConfig])
+//		)
 }

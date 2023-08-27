@@ -4,7 +4,21 @@ import zio.json._
 import zio.schema._
 import zio.prelude._
 
+import java.time.Instant
+import java.util.UUID
+
 package object types {
+	implicit val ordInstant: Ord[Instant] = Ord.fromScala[Instant]
+	implicit val eqUUID: Equal[UUID] = Equal.fromScala[UUID]
+	
+	abstract class StringType extends RichNewtype[String]
+	
+	abstract class UUIDType extends RichNewtype[UUID]
+	
+	abstract class InstantType extends RichNewtype[Instant] {self =>
+		implicit val ord: Ord[self.Type] = Ord[Instant].contramap {unwrap}
+	}
+	
 	abstract class RichNewtype[A : JsonCodec : Schema : Equal] extends Newtype[A] { self =>
 		implicit val equiv: A <=> Type = Equivalence(wrap, unwrap)
 		implicit val equal: Equal[Type] = implicitly[Equal[A]].contramap(unwrap)
@@ -14,11 +28,15 @@ package object types {
 		implicit final class UnwrapOps(value: Type) {
 			def unwrap: A = self.unwrap(value)
 		}
+		
+		implicit final class WrapOps(value: A) {
+			def unwrap: Type = self.wrap(value)
+		}
 	}
 	
 	object RichNewtype {
 		def wrap[FROM, TO <: RichNewtype[FROM]#Type](a: FROM)(implicit equiv: Equivalence[FROM, TO]): TO = equiv.to(a)
-		def unwrap[FROM, TO, _ <: RichNewtype[FROM]#Type](a: TO)(implicit equiv: Equivalence[FROM, TO]): FROM = equiv.from(a)
+		def unwrap[FROM, TO, _ <: RichNewtype[FROM]#Type](a: TO)(implicit equiv: Equivalence[FROM, TO]): FROM = {println("SSSSSSSSSSSSSSSS"); equiv.from(a)}
 	}
 	
 	abstract class RichSubtype[A: JsonCodec : Schema : Ord] extends Subtype[A] { self =>
@@ -29,6 +47,10 @@ package object types {
 		
 		implicit final class UnwrapOps(value: Type) {
 			def unwrap: A = self.unwrap(value)
+		}
+		
+		implicit final class WrapOps(value: A) {
+			def unwrap: Type = self.wrap(value)
 		}
 	}
 	

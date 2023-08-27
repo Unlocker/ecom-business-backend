@@ -1,13 +1,10 @@
 package com.ecom.point.banks
 
-import com.ecom.point.banks.entities.BankType.findValues
-import com.ecom.point.banks.models.BankAccountBalance
-import enumeratum._
-import zio.json.{DeriveJsonCodec, JsonCodec, JsonDecoder, JsonEncoder}
-import zio.prelude.Assertion._
-import zio.prelude.{Equal, Newtype, QuotedAssertion, Subtype}
-import zio.schema.Schema
 import com.ecom.point.utils.types._
+import enumeratum._
+import zio.json.{JsonCodec, JsonDecoder, JsonEncoder}
+import zio.prelude.Assertion._
+import zio.prelude.QuotedAssertion
 package object entities {
   
   sealed trait BankType extends EnumEntry
@@ -34,19 +31,21 @@ package object entities {
     )
   }
 
+  object AccountId extends StringType
   type AccountId = AccountId.Type
-  object AccountId extends RichNewtype[String]
 
-  type TaxId = TaxId.Type
+  
   object TaxId extends RichSubtype[String] {
     override def assertion: QuotedAssertion[String] = assert {
       matches("""^(\d{10}|\d{12})$""".r)
     }
   }
+  
+  type TaxId = TaxId.Type
 
+  object CompanyName extends StringType
   type CompanyName = CompanyName.Type
-  object CompanyName extends RichNewtype[String]
 
+  object StatementId extends StringType
   type StatementId = StatementId.Type
-  object StatementId extends RichNewtype[String]
 }
