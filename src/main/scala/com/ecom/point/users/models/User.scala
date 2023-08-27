@@ -1,10 +1,8 @@
 package com.ecom.point.users.models
 
-import com.ecom.point.share.entities._
 import com.ecom.point.share.repos.TokenDbo
-import com.ecom.point.users.entities._
+import com.ecom.point.share.types._
 import com.ecom.point.users.repos.UserDbo
-import com.ecom.point.users.repos.UserDbo._
 import zio.json.{DeriveJsonCodec, JsonCodec}
 
 final case class User(

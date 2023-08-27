@@ -1,7 +1,7 @@
 package com.ecom.point.banks.models
 
-import com.ecom.point.banks.entities.AccountId
-import com.ecom.point.banks.entities.BankType
+
+import com.ecom.point.share.types._
 import zio.json.{DeriveJsonCodec, JsonCodec}
 
 import java.util.Currency

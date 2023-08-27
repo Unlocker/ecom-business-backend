@@ -1,6 +1,6 @@
 package com.ecom.point.share.repos
 
-import com.ecom.point.share.entities.{AccessToken, AccessTokenId, ExpirationTokenDate, RefreshToken, UserId}
+import com.ecom.point.share.types._
 
 final case class TokenDbo(
 													 id: AccessTokenId,

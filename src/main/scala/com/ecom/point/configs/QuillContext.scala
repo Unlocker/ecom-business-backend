@@ -1,20 +1,11 @@
 package com.ecom.point.configs
 
-import com.ecom.point.configs.QuillContext.MappedEncoding
 import io.getquill.context.sql.SqlContext
 import io.getquill.jdbczio.Quill
-import io.getquill.{PostgresZioJdbcContext, Quoted, SnakeCase}
+import io.getquill._
 import zio.ZLayer
-import zio.prelude.Equivalence
-import com.ecom.point.utils.types._
 
 import java.time.{Instant, LocalDate}
-import javax.sql.DataSource
-
-trait NewTypeMapping {
-	implicit def newtypeEncoder[A, T <: RichNewtype[A]#Type](implicit equiv: Equivalence[A, T]): MappedEncoding[T, A] = MappedEncoding[T, A](RichNewtype.unwrap(_))
-	implicit def newtypeDecoder[A, T <: RichNewtype[A]#Type](implicit equiv: Equivalence[A, T]): MappedEncoding[A, T] = MappedEncoding[A, T](RichNewtype.wrap(_))
-}
 
 
 trait Quotes {
@@ -49,8 +40,7 @@ trait Quotes {
 	}
 }
 
-object QuillContext extends PostgresZioJdbcContext(SnakeCase) with NewTypeMapping with Quotes {
-	val layer: ZLayer[Any, Nothing, DataSource] = Quill.DataSource.fromPrefix("database").orDie
-	
+object QuillContext extends PostgresZioJdbcContext(SnakeCase) {
+	val layer: ZLayer[Any, Throwable, Quill.Postgres[SnakeCase.type]] =  Quill.DataSource.fromPrefix("database") >>> Quill.Postgres.fromNamingStrategy(SnakeCase)
 }
 

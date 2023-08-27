@@ -1,6 +1,6 @@
 package com.ecom.point.banks.models
 
-import com.ecom.point.share.entities.{AccessToken, AccessTokenId, ExpirationTokenDate, RefreshToken, UserId}
+import com.ecom.point.share.types._
 import com.ecom.point.share.repos.TokenDbo
 import zio.json.{DeriveJsonCodec, JsonCodec}
 

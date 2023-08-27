@@ -2,7 +2,7 @@ package com.ecom.point.banks.repos
 
 import com.ecom.point.banks.models.BankAccessToken
 import com.ecom.point.configs.QuillContext._
-import com.ecom.point.share.entities._
+import com.ecom.point.share.types._
 import com.ecom.point.share.repos.TokenDbo
 import io.getquill._
 
@@ -16,7 +16,7 @@ object Queries {
 			_.expirationTokenDate -> "expiration_date",
 			_.userId -> "user_id"
 		)
-	
+
 	implicit class TokenToDbo(t: BankAccessToken) {
 		def toDbo: TokenDbo =
 			TokenDbo(
@@ -27,26 +27,26 @@ object Queries {
 				userId = t.userId
 			)
 	}
-	
+
 	implicit val insert: InsertMeta[TokenDbo] = insertMeta(_.id)
 
 	implicit val update: UpdateMeta[TokenDbo] = updateMeta(_.id, _.userId)
-	
-	
+
+
 	def getBankAccessTokens: Quoted[EntityQuery[TokenDbo]] = quote(
 		query[TokenDbo]
 	)
-	
+
 	def getBankAccessTokenById(id: AccessTokenId.Type): Quoted[EntityQuery[TokenDbo]] = quote (
 		query[TokenDbo]
 			.filter(_.id == lift(id))
 	)
-	
+
 	def getBankAccessTokenByUserId(userId: UserId.Type): Quoted[EntityQuery[TokenDbo]] = quote (
 		query[TokenDbo]
 			.filter(_.userId == lift(userId))
 	)
-	
+
 	def createBankAccessToken(bankAccessToken: BankAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = {
 		val tokenDbo = bankAccessToken.toDbo
 		quote(
@@ -55,7 +55,7 @@ object Queries {
 				.returning(tk => tk)
 		)
 	}
-	
+
 	def updateBankAccessToken(bankAccessToken: BankAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] =  {
 		val tokenDbo = bankAccessToken.toDbo
 		quote(
@@ -65,13 +65,13 @@ object Queries {
 				.returning(acc => acc)
 		)
 	}
-	
+
 	def deleteBankAccessToken(id: AccessTokenId.Type): Quoted[ActionReturning[TokenDbo, Index]] = quote (
 		query[TokenDbo]
 			.filter(_.id == lift(id))
 			.delete
 			.returning(_ => 1)
 	)
-	
-	
+
+
 }

@@ -4,6 +4,8 @@ import com.ecom.point.configs.QuillContext
 import com.ecom.point.users.endpoints.Handlers
 import com.ecom.point.users.repos.UserRepository
 import com.ecom.point.users.services.UserService
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
 import zio.http._
 import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault}
 

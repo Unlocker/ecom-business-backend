@@ -1,7 +1,6 @@
 package com.ecom.point.users.repos
 
-import com.ecom.point.share.entities._
-import com.ecom.point.users.entities._
+import com.ecom.point.share.types._
 
 
 final case class UserDbo(

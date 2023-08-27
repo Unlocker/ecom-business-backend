@@ -1,10 +1,9 @@
 package com.ecom.point.users.repos
 
-import com.ecom.point.configs.QuillContext.{Index, lift, quote, _}
-import com.ecom.point.share.entities.UserId
+import com.ecom.point.share.types._
 import com.ecom.point.users.models.User
 import io.getquill._
-
+import com.ecom.point.configs.QuillContext._
 
 object Queries {
 	implicit val userSchema: SchemaMeta[UserDbo] =

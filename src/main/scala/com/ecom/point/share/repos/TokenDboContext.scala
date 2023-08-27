@@ -1,7 +1,6 @@
 package com.ecom.point.share.repos
 
 import com.ecom.point.configs.QuillContext._
-import com.ecom.point.share.entities.{AccessToken, AccessTokenId, ExpirationTokenDate, RefreshToken}
 
 import java.sql.Timestamp
 import java.util.UUID

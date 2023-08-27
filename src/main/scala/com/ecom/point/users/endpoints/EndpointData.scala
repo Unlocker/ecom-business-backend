@@ -1,7 +1,6 @@
 package com.ecom.point.users.endpoints
 import zio.prelude._
-import com.ecom.point.share.entities.AccessToken
-import com.ecom.point.users.entities.{Name, Password, PhoneNumber}
+import com.ecom.point.share.types._
 import zio.schema.{DeriveSchema, Schema}
 
 
