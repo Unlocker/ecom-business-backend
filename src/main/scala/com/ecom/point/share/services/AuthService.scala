@@ -4,10 +4,10 @@ import com.ecom.point.configs.QuillContext._
 import com.ecom.point.share.entities._
 import com.ecom.point.share.repos.Queries
 import com.ecom.point.users.entities._
-import com.ecom.point.users.models.{User, UserAccessToken}
-import com.ecom.point.users.models.UserAccessToken._
+import com.ecom.point.users.models.UserAccessToken
 import com.ecom.point.utils.SchemeConverter._
 import com.ecom.point.utils.{AppError, Unauthorized}
+import com.ecom.point.utils.types._
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtTime}
 import zio.json._
 import zio.prelude._

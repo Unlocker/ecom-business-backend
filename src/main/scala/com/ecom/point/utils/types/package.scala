@@ -19,7 +19,7 @@ package object types {
 	abstract class RichNewtype[A : JsonCodec : Schema : Equal : Ord] extends Newtype[A] { self =>
 		implicit val equiv: A <=> Type = Equivalence(wrap, unwrap)
 		implicit val equal: Equal[Type] = implicitly[Equal[A]].contramap(unwrap)
-		implicit val ord: Equal[Type] = implicitly[Ord[A]].contramap(unwrap)
+		implicit val ord: Ord[Type] = implicitly[Ord[A]].contramap(unwrap)
 		implicit val jsonCodec: JsonCodec[Type] = implicitly[JsonCodec[A]].transform(wrap, unwrap)
 		implicit val schemeConverter: Schema[Type] = implicitly[Schema[A]].transform(wrap, unwrap)
 		
