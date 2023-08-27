@@ -5,11 +5,11 @@ import com.ecom.point.share.repos.TokenDbo
 import zio.json.{DeriveJsonCodec, JsonCodec}
 
 final case class BankAccessToken(
-												id: AccessTokenId.Type,
-												accessToken: AccessToken.Type,
-												refreshToken: RefreshToken.Type,
-												expirationTokenDate: ExpirationTokenDate.Type,
-												userId: UserId.Type
+												id: AccessTokenId,
+												accessToken: AccessToken,
+												refreshToken: RefreshToken,
+												expirationTokenDate: ExpirationTokenDate,
+												userId: UserId
 											)
 
 object BankAccessToken {

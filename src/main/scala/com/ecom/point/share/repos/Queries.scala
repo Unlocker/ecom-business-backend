@@ -4,7 +4,6 @@ import com.ecom.point.configs.QuillContext._
 import com.ecom.point.share.entities.{AccessToken, AccessTokenId, UserId}
 import com.ecom.point.users.models.UserAccessToken
 import com.ecom.point.users.repos.UserDbo
-import com.ecom.point.users.repos.UserDbo._
 import io.getquill._
 
 object Queries {
@@ -38,11 +37,11 @@ object Queries {
 	
 	
 	def getUserAccessTokenByValue(userAccessToken: AccessToken.Type): Quoted[Query[(TokenDbo, UserDbo)]] = {
-		val q = com.ecom.point.users.repos.Queries
+		val userQueries = com.ecom.point.users.repos.Queries
 		quote(
 			userTokens
 				.filter(_.accessToken == lift(userAccessToken))
-				.join(q.users).on(_.userId == _.id)
+				.join(userQueries.users).on(_.userId == _.id)
 		)
 	}
 	

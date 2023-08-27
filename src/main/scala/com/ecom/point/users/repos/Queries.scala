@@ -1,10 +1,8 @@
 package com.ecom.point.users.repos
 
 import com.ecom.point.configs.QuillContext.{Index, lift, quote, _}
-import com.ecom.point.share.entities.{AccessTokenId, UserId}
-import com.ecom.point.share.repos.TokenDbo
-import com.ecom.point.users.models.{User, UserAccessToken}
-import com.ecom.point.users.repos.UserDbo._
+import com.ecom.point.share.entities.UserId
+import com.ecom.point.users.models.User
 import io.getquill._
 
 

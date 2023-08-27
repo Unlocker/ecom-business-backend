@@ -26,9 +26,15 @@ val commonSettings = Seq(
     "com.github.jwt-scala" %% "jwt-zio-json" % Dependencies.jwtZioVersion,
     "dev.zio" %% "zio-config" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-schema" % Dependencies.zioSchemaVersion,
-    "dev.zio" %% "zio-schema-derivation" % Dependencies.zioSchemaVersion,
+//    "dev.zio" %% "zio-schema-derivation" % Dependencies.zioSchemaVersion,
+
+    "io.circe" %% "circe-core" % "0.14.1",
+    "io.circe" %% "circe-generic" % "0.14.1",
+    "io.circe" %% "circe-parser" % "0.14.1",
+
     "dev.zio" %% "zio-config-magnolia" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-config-typesafe" % Dependencies.zioConfigVersion,
+    "com.beachape" %% "enumeratum" % "1.7.3",
     "dev.zio" %% "zio-logging" % Dependencies.zioLoggingVersion,
     "ch.qos.logback" % "logback-classic" % Dependencies.logback,
 //    "io.github.scottweaver" %% "zio-2-0-testcontainers-postgresql" % Test.zioTestContainer % Test,

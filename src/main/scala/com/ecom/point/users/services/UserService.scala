@@ -1,16 +1,11 @@
 package com.ecom.point.users.services
 
 
-import com.ecom.point.share.entities.{AccessToken, UserId}
+import com.ecom.point.share.entities.AccessToken
 import com.ecom.point.users.endpoints.EndpointData.SignUpRequest
-import com.ecom.point.users.entities.CreatedDate
-import com.ecom.point.users.models.User
 import com.ecom.point.users.repos.UserRepository
 import com.ecom.point.utils.AppError
-import zio.{IO, ZIO, ZLayer}
-
-import java.time.Instant
-import java.util.UUID
+import zio.{IO, ZLayer}
 
 
 
@@ -21,7 +16,7 @@ trait UserService {
 }
 
 object UserService {
-	def signUp(signUpRequest: SignUpRequest) = ZIO.serviceWithZIO[UserService](_.signUp(signUpRequest))
+	def layer: ZLayer[UserRepository, Nothing, UserServiceLive] = ZLayer.fromFunction(UserServiceLive.apply _)
 }
 case class UserServiceLive(userRepository: UserRepository) extends UserService{
 	override def signUp(signUpRequest: SignUpRequest): IO[AppError, AccessToken.Type] =  ???
@@ -44,6 +39,4 @@ case class UserServiceLive(userRepository: UserRepository) extends UserService{
 //	}
 }
 
-object UserServiceLive {
-	def layer: ZLayer[UserRepository, Nothing, UserServiceLive] = ZLayer.fromFunction(UserServiceLive.apply _)
-}
+

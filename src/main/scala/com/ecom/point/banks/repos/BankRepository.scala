@@ -12,13 +12,13 @@ import javax.sql.DataSource
 trait BankRepository {
 	def createBankAccessToken(bankAccessToken: BankAccessToken): IO[RepositoryError, BankAccessToken]
 	
-	def deleteBankAccessToken(tokenId: AccessTokenId.Type): IO[RepositoryError, Int]
+	def deleteBankAccessToken(tokenId: AccessTokenId): IO[RepositoryError, Int]
 	
 	def getBankAccessTokens: Task[Seq[BankAccessToken]]
 	
-	def getBankAccessTokenById(tokenId: AccessTokenId.Type): Task[Option[BankAccessToken]]
+	def getBankAccessTokenById(tokenId: AccessTokenId): Task[Option[BankAccessToken]]
 	
-	def getBankAccessTokenByUserId(usertId: UserId.Type): Task[Option[BankAccessToken]]
+	def getBankAccessTokenByUserId(usertId: UserId): Task[Option[BankAccessToken]]
 	
 	def updateBankAccessToken(bankAccessToken: BankAccessToken): IO[RepositoryError, BankAccessToken]
 }
@@ -35,7 +35,7 @@ final case class TokenRepositoryImpl(dataSource: DataSource) extends BankReposit
 			.provideEnvironment(envDataSource)
 			.asModelWithMapError(RepositoryError(_))
 	
-	override def deleteBankAccessToken(tokenId: AccessTokenId.Type): IO[RepositoryError, Index] = {
+	override def deleteBankAccessToken(tokenId: AccessTokenId): IO[RepositoryError, Index] = {
 		run(Queries.deleteBankAccessToken(tokenId))
 			.provideEnvironment(envDataSource)
 			.asModelWithMapError(RepositoryError(_))
@@ -47,14 +47,14 @@ final case class TokenRepositoryImpl(dataSource: DataSource) extends BankReposit
 			.asModel
 	}
 	
-	override def getBankAccessTokenById(tokenId: AccessTokenId.Type): Task[Option[BankAccessToken]] = {
+	override def getBankAccessTokenById(tokenId: AccessTokenId): Task[Option[BankAccessToken]] = {
 		run(Queries.getBankAccessTokenById(tokenId))
 			.provideEnvironment(envDataSource)
 			.map(_.headOption)
 			.asModel
 	}
 	
-	override def getBankAccessTokenByUserId(userId: UserId.Type): Task[Option[BankAccessToken]] = {
+	override def getBankAccessTokenByUserId(userId: UserId): Task[Option[BankAccessToken]] = {
 		run(Queries.getBankAccessTokenByUserId(userId))
 			.provideEnvironment(envDataSource)
 			.map(_.headOption)

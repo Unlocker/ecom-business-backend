@@ -1,58 +1,52 @@
 package com.ecom.point.banks
 
-import zio.json.{JsonDecoder, JsonEncoder}
+import com.ecom.point.banks.entities.BankType.findValues
+import com.ecom.point.banks.models.BankAccountBalance
+import enumeratum._
+import zio.json.{DeriveJsonCodec, JsonCodec, JsonDecoder, JsonEncoder}
 import zio.prelude.Assertion._
 import zio.prelude.{Equal, Newtype, QuotedAssertion, Subtype}
 import zio.schema.Schema
-
+import com.ecom.point.utils.types._
 package object entities {
-  object BankType extends Enumeration {
-    type BankType = Value
-    val TOCHKA, SBERBANK, TINKOFF = Value
+  
+  sealed trait BankType extends EnumEntry
+  object BankType extends Enum[BankType] {
+    override val values: IndexedSeq[BankType] = findValues
+    case object TOCHKA extends BankType
+    case object SBERBANK extends BankType
+    case object TINKOFF extends BankType
+    
+    implicit val bankCodec: JsonCodec[BankType] = JsonCodec[BankType](
+      JsonEncoder[String].contramap[BankType](_.entryName),
+      JsonDecoder[String].mapOrFail(name => BankType.withNameEither(name).left.map(_.getMessage)),
+    )
   }
-
-  object StatementDirection extends Enumeration {
-    type StatementDirection = Value
-    val INCOME = Value(1)
-    val OUTCOME = Value(-1)
+  sealed trait StatementDirection extends EnumEntry
+  object StatementDirection extends Enum[StatementDirection] {
+    override val values: IndexedSeq[StatementDirection] = findValues
+    case object INCOME extends StatementDirection
+    case object OUTCOME extends StatementDirection
+    
+    implicit val directionCodec: JsonCodec[StatementDirection] = JsonCodec[StatementDirection](
+      JsonEncoder[String].contramap[StatementDirection](_.entryName),
+      JsonDecoder[String].mapOrFail(name => StatementDirection.withNameEither(name).left.map(_.getMessage)),
+    )
   }
 
   type AccountId = AccountId.Type
-
-  object AccountId extends Newtype[String] {
-    implicit val eq: Equal[AccountId] = Equal.default
-    implicit val jsonEncoder: JsonEncoder[AccountId] = JsonEncoder[String].contramap(AccountId.unwrap)
-    implicit val jsonDecoder: JsonDecoder[AccountId] = JsonDecoder[String].map(AccountId.wrap)
-    implicit val schema: Schema[AccountId] = Schema.primitive[String].transform(str => AccountId(str), tp => AccountId.unwrap(tp))
-  }
+  object AccountId extends RichNewtype[String]
 
   type TaxId = TaxId.Type
-
-  object TaxId extends Subtype[String] {
+  object TaxId extends RichSubtype[String] {
     override def assertion: QuotedAssertion[String] = assert {
       matches("""^(\d{10}|\d{12})$""".r)
     }
-
-    implicit val eq: Equal[TaxId] = Equal.default
-    implicit val jsonEncoder: JsonEncoder[TaxId] = JsonEncoder[String].contramap(TaxId.unwrap)
-    implicit val jsonDecoder: JsonDecoder[TaxId] = JsonDecoder[String].map(TaxId.wrap)
-    implicit val schema: Schema[TaxId] = Schema.primitive[String].transform(str => TaxId(str), tp => TaxId.unwrap(tp))
   }
 
   type CompanyName = CompanyName.Type
-
-  object CompanyName extends Newtype[String] {
-    implicit val eq: Equal[CompanyName] = Equal.default
-    implicit val jsonEncoder: JsonEncoder[CompanyName] = JsonEncoder[String].contramap(CompanyName.unwrap)
-    implicit val jsonDecoder: JsonDecoder[CompanyName] = JsonDecoder[String].map(CompanyName.wrap)
-    implicit val schema: Schema[CompanyName] = Schema.primitive[String].transform(str => CompanyName(str), tp => CompanyName.unwrap(tp))
-  }
+  object CompanyName extends RichNewtype[String]
 
   type StatementId = StatementId.Type
-  object StatementId extends Newtype[String] {
-    implicit val eq: Equal[StatementId] = Equal.default
-    implicit val jsonEncoder: JsonEncoder[StatementId] = JsonEncoder[String].contramap(StatementId.unwrap)
-    implicit val jsonDecoder: JsonDecoder[StatementId] = JsonDecoder[String].map(StatementId.wrap)
-    implicit val schema: Schema[StatementId] = Schema.primitive[String].transform(str => StatementId(str), tp => StatementId.unwrap(tp))
-  }
+  object StatementId extends RichNewtype[String]
 }

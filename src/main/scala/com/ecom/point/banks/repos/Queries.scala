@@ -6,7 +6,6 @@ import com.ecom.point.share.entities._
 import com.ecom.point.share.repos.TokenDbo
 import io.getquill._
 
-
 object Queries {
 	implicit val tokenSchema: SchemaMeta[TokenDbo] =
 		schemaMeta[TokenDbo](
@@ -14,7 +13,7 @@ object Queries {
 			_.id -> "id",
 			_.accessToken -> "access_token",
 			_.refreshToken -> "refresh_token",
-			_.expirationTokenDate -> "cancel_access_token_date",
+			_.expirationTokenDate -> "expiration_date",
 			_.userId -> "user_id"
 		)
 	
@@ -30,11 +29,11 @@ object Queries {
 	}
 	
 	implicit val insert: InsertMeta[TokenDbo] = insertMeta(_.id)
-	
+
 	implicit val update: UpdateMeta[TokenDbo] = updateMeta(_.id, _.userId)
 	
 	
-	def getBankAccessTokens: EntityQuery[TokenDbo] = quote (
+	def getBankAccessTokens: Quoted[EntityQuery[TokenDbo]] = quote(
 		query[TokenDbo]
 	)
 	

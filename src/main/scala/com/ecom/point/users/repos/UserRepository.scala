@@ -15,7 +15,7 @@ trait UserRepository {
 	
 	def deleteUser(userId: UserId.Type): IO[RepositoryError, Int]
 	
-//	def getUsers: Task[Seq[User]]
+	def getUsers: Task[Seq[User]]
 	
 	def getUserById(userId: UserId.Type): Task[Option[User]]
 	
@@ -23,15 +23,7 @@ trait UserRepository {
 }
 
 object UserRepository {
-	def createUser(user: User) = ZIO.serviceWithZIO[UserRepository](_.createUser(user))
-	
-	def deleteUser(userId: UserId.Type) = ZIO.serviceWithZIO[UserRepository](_.deleteUser(userId))
-	
-//	def getUsers: Task[Seq[User]] = ZIO.serviceWithZIO[UserRepository](_.getUsers)
-	
-	def getUserById(userId: UserId.Type) = ZIO.serviceWithZIO[UserRepository](_.getUserById(userId))
-	
-	def updateUser(user: User) = ZIO.serviceWithZIO[UserRepository](_.updateUser(user))
+	def layer: ZLayer[DataSource, Nothing, UserRepositoryLive] = ZLayer.fromFunction(UserRepositoryLive.apply _)
 }
 
 case class UserRepositoryLive(dataSource: DataSource) extends UserRepository {
@@ -49,11 +41,11 @@ case class UserRepositoryLive(dataSource: DataSource) extends UserRepository {
 			.asModelWithMapError(err => RepositoryError(err))
 	}
 	
-//	override def getUsers: Task[Seq[User]] = {
-//		run(Queries.getUsers)
-//			.provideEnvironment(envDataSource)
-//			.asModel
-//	}
+	override def getUsers: Task[Seq[User]] = {
+		run(Queries.getUsers)
+			.provideEnvironment(envDataSource)
+			.asModel
+	}
 	
 	override def getUserById(userId: UserId.Type): Task[Option[User]] = {
 		run(Queries.getUserById(userId))
@@ -69,6 +61,6 @@ case class UserRepositoryLive(dataSource: DataSource) extends UserRepository {
 	}
 }
 
-object UserRepositoryLive {
-	def layer: ZLayer[DataSource, Nothing, UserRepositoryLive] = ZLayer.fromFunction(UserRepositoryLive.apply _)
-}
+
+
+

@@ -1,26 +1,26 @@
 package com.ecom.point.share.repos
 
+import com.ecom.point.configs.QuillContext._
 import com.ecom.point.share.entities.{AccessToken, AccessTokenId, ExpirationTokenDate, RefreshToken}
-import io.getquill.MappedEncoding
 
-import java.time.Instant
+import java.sql.Timestamp
 import java.util.UUID
 
-object TokenDboContext {
-	
-	trait Decoders {
-		implicit val accessTokenIdDecoder: MappedEncoding[UUID, AccessTokenId] = MappedEncoding[UUID, AccessTokenId](x => AccessTokenId(x))
-		implicit val AccessTokeDecoder: MappedEncoding[String, AccessToken] = MappedEncoding[String, AccessToken](x => AccessToken(x))
-		implicit val refreshTokenDecoder: MappedEncoding[String, RefreshToken] = MappedEncoding[String, RefreshToken](x => RefreshToken(x))
-		implicit val expirationTokenDateDecoder: MappedEncoding[Instant, ExpirationTokenDate] = MappedEncoding[Instant, ExpirationTokenDate](x => ExpirationTokenDate(x))
-		
-	}
-	
-	trait Encoders {
-		implicit val accessTokenIdEncoder: MappedEncoding[AccessTokenId, UUID] = MappedEncoding[AccessTokenId, UUID](x => AccessTokenId.unwrap(x))
-		implicit val AccessTokeEncoder: MappedEncoding[AccessToken, String] = MappedEncoding[AccessToken, String](x => AccessToken.unwrap(x))
-		implicit val refreshTokenEncoder: MappedEncoding[RefreshToken, String] = MappedEncoding[RefreshToken, String](x => RefreshToken.unwrap(x))
-		implicit val expiresTokenDateEncoder: MappedEncoding[ExpirationTokenDate, Instant] = MappedEncoding[ExpirationTokenDate, Instant](x => ExpirationTokenDate.unwrap(x))
-	}
-	
-}
+//object TokenDboContext {
+//
+//	object Decoders {
+//		implicit val accessTokenIdDecoder: Decoder[AccessTokenId] = decoder((index, row, _) => AccessTokenId(UUID.fromString(row.getObject(index).toString)))
+//		implicit val accessTokeDecoder: Decoder[AccessToken] = decoder((index, row, _) => AccessToken(row.getString(index)))
+//		implicit val refreshTokenDecoder: Decoder[RefreshToken] = decoder((index, row, _) => RefreshToken(row.getString(index)))
+//		implicit val expirationTokenDateDecoder: Decoder[ExpirationTokenDate] = decoder((index, row, _) => ExpirationTokenDate(row.getTimestamp(index).toInstant))
+//
+//	}
+//
+//	object Encoders {
+//		implicit val accessTokenIdEncoder: Encoder[AccessTokenId] = encoder(java.sql.Types.OTHER, (index, value, row) => row.setObject(index, AccessTokenId.unwrap(value), java.sql.Types.OTHER))
+//		implicit val accessTokeEncoder: Encoder[AccessToken] = encoder(java.sql.Types.VARCHAR, (index, value, row) => row.setString(index, AccessToken.unwrap(value)))
+//		implicit val refreshTokenEncoder: Encoder[RefreshToken] = encoder(java.sql.Types.VARCHAR, (index, value, row) => row.setString(index, RefreshToken.unwrap(value)))
+//		implicit val expiresTokenDateEncoder: Encoder[ExpirationTokenDate] = encoder(java.sql.Types.TIMESTAMP, (index, value, row) => row.setTimestamp(index, Timestamp.from(ExpirationTokenDate.unwrap(value))))
+//	}
+//
+//}

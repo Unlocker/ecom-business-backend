@@ -1,7 +1,7 @@
 package com.ecom.point.banks.models
 
 import com.ecom.point.banks.entities.AccountId
-import com.ecom.point.banks.entities.BankType.BankType
+import com.ecom.point.banks.entities.BankType
 import zio.json.{DeriveJsonCodec, JsonCodec}
 
 import java.util.Currency
@@ -9,7 +9,7 @@ import java.util.Currency
 final case class BankAccountBalance(
                                      accountId: AccountId,
                                      bank: BankType,
-                                     amount: Currency
+//                                     amount: Currency
                                    )
 
 object BankAccountBalance {

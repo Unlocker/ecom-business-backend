@@ -1,8 +1,7 @@
 package com.ecom.point.banks.models
 
-import com.ecom.point.banks.entities.BankType.BankType
-import com.ecom.point.banks.entities.StatementDirection.StatementDirection
-import com.ecom.point.banks.entities.{AccountId, StatementId}
+import com.ecom.point.banks.entities.{BankType, StatementDirection}
+import com.ecom.point.banks.entities.{AccountId, BankType, StatementDirection, StatementId}
 import zio.json.{DeriveJsonCodec, JsonCodec}
 
 import java.time.LocalDate
@@ -15,7 +14,7 @@ case class BankStatement(
                           direction: StatementDirection,
                           date: LocalDate,
                           counterparty: Counterparty,
-                          amount: Currency
+//                          amount: Currency
                         )
 
 object BankStatement {
