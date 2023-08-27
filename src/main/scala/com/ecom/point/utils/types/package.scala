@@ -34,7 +34,7 @@ package object types {
 	
 	object RichNewtype {
 		def wrap[FROM, TO <: RichNewtype[FROM]#Type](a: FROM)(implicit equiv: Equivalence[FROM, TO]): TO = equiv.to(a)
-		def unwrap[FROM, TO, _ <: RichNewtype[FROM]#Type](a: TO)(implicit equiv: Equivalence[FROM, TO]): FROM = {println("SSSSSSSSSSSSSSSS"); equiv.from(a)}
+		def unwrap[FROM, TO, _ <: RichNewtype[FROM]#Type](a: TO)(implicit equiv: Equivalence[FROM, TO]): FROM = { equiv.from(a)}
 	}
 	
 	abstract class RichSubtype[A: JsonCodec : Schema : Ord] extends Subtype[A] { self =>
