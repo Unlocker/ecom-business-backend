@@ -13,7 +13,7 @@ libraryDependencies += "org.flywaydb" % "flyway-core" % "8.5.10"
 
 lazy val databaseUrl = sys.env.getOrElse("DB_DEFAULT_URL", "jdbc:postgresql://docker:5435/ecom_point_db")
 lazy val databaseUser = sys.env.getOrElse("DB_DEFAULT_USER", "ecom_point_db_admin")
-lazy val databasePassword = sys.env.getOrElse("DB_DEFAULT_PASSWORD", "f23_[RudStw8)")
+lazy val databasePassword = sys.env.getOrElse("DB_DEFAULT_PASSWORD", "f23RudStw8")
 
 flywayLocations := Seq("classpath:db.migration")
 

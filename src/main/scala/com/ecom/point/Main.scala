@@ -14,7 +14,7 @@ object Main extends ZIOAppDefault {
 	override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] = {
 		
 		Server
-			.serve(Handlers.authApi)
+			.serve(Handlers.authApi  @@ RequestHandlerMiddlewares.requestLogging())
 			.provide(
 				Server.default,
 				UserService.layer,

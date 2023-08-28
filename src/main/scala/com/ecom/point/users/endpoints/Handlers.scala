@@ -1,5 +1,6 @@
 package com.ecom.point.users.endpoints
 
+import com.ecom.point.share.types.AccessToken
 import com.ecom.point.users.endpoints.EndpointData.{SignInUpResponse, SignUpRequest}
 import com.ecom.point.users.services.UserService
 import zio.http.MediaType
@@ -16,7 +17,8 @@ object Handlers {
 		.inCodec(ContentCodec.content[SignUpRequest](MediaType.application.json))
 		.outCodec(ContentCodec.content[SignInUpResponse](MediaType.application.json))
 		.implement{ req =>
-			ZIO.serviceWithZIO[UserService](_.signUp(req)).orDie.map(data => SignInUpResponse(data))
+			ZIO.succeed(SignInUpResponse(AccessToken("SSSSSSSSSS")))
+//			ZIO.serviceWithZIO[UserService](_.signUp(req)).orDie.map(data => SignInUpResponse(data))
 		}
 	
 	

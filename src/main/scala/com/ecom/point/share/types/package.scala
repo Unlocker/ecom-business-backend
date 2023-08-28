@@ -114,7 +114,7 @@ package object types {
 	object UserId extends UUIDType
 	type UserId = UserId.Type
 	
-	object AccessTokenId extends StringType
+	object AccessTokenId extends UUIDType
 	type AccessTokenId = AccessTokenId.Type
 	
 	object AccessToken extends StringType

@@ -36,7 +36,7 @@ services:
     environment:
       POSTGRES_DB: ecom_point_db
       POSTGRES_USER: "ecom_point_db_admin"
-      POSTGRES_PASSWORD: "f23_[RudStw8)"
+      POSTGRES_PASSWORD: "f23RudStw8"
       PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
       - .:/var/lib/postgresql/data
