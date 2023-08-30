@@ -4,7 +4,6 @@ import com.ecom.point.share.types._
 import zio.json.{DeriveJsonCodec, JsonCodec}
 
 import java.time.LocalDate
-import java.util.Currency
 
 case class BankStatement(
                           statementId: StatementId,
@@ -13,7 +12,7 @@ case class BankStatement(
                           direction: StatementDirection,
                           date: LocalDate,
                           counterparty: Counterparty,
-//                          amount: Currency
+                          amount: Money
                         )
 
 object BankStatement {
