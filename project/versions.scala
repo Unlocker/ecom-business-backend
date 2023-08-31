@@ -18,7 +18,7 @@ object Dependencies{
 	val logback = "1.2.11"
 }
 
-object Test{
+object TestDependencies{
 	val zioTestContainer = "0.10.0"
 	val zioHttpTestVersion = "2.0.0-RC9"
 	val zioVersion = "2.0.15"

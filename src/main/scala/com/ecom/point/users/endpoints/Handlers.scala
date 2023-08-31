@@ -17,8 +17,7 @@ object Handlers {
 		.inCodec(ContentCodec.content[SignUpRequest](MediaType.application.json))
 		.outCodec(ContentCodec.content[SignInUpResponse](MediaType.application.json))
 		.implement{ req =>
-			ZIO.succeed(SignInUpResponse(AccessToken("SSSSSSSSSS")))
-//			ZIO.serviceWithZIO[UserService](_.signUp(req)).orDie.map(data => SignInUpResponse(data))
+			ZIO.serviceWithZIO[UserService](_.signUp(req)).orDie.map(data => SignInUpResponse(data))
 		}
 	
 	

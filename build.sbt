@@ -1,4 +1,5 @@
 import scala.collection.immutable.Seq
+import _root_.sbt._
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion := Scala.v213
@@ -32,10 +33,10 @@ val commonSettings = Seq(
     "com.beachape" %% "enumeratum" % "1.7.3",
     "dev.zio" %% "zio-logging" % Dependencies.zioLoggingVersion,
     "ch.qos.logback" % "logback-classic" % Dependencies.logback,
-//    "io.github.scottweaver" %% "zio-2-0-testcontainers-postgresql" % Test.zioTestContainer % Test,
-//    "io.github.scottweaver" %% "zio-2-0-db-migration-aspect" % Test.zioTestContainer % Test,
-//    "dev.zio" %% "zio-test" % Test.zioVersion % Test,
-//    "dev.zio" %% "zio-test-sbt" % Test.zioVersion % Test
+    "io.github.scottweaver" %% "zio-2-0-testcontainers-postgresql" % TestDependencies.zioTestContainer % Test,
+    "io.github.scottweaver" %% "zio-2-0-db-migration-aspect" % TestDependencies.zioTestContainer % Test,
+    "dev.zio" %% "zio-test" % TestDependencies.zioVersion % Test,
+    "dev.zio" %% "zio-test-sbt" % TestDependencies.zioVersion % Test
   
   )
 )

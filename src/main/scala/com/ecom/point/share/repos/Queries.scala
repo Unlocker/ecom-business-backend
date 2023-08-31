@@ -15,6 +15,7 @@ object Queries {
 			_.refreshToken -> "refresh_token",
 			_.expirationTokenDate -> "expiration_date",
 			_.userId -> "user_id"
+			
 		)
 	}
 	
