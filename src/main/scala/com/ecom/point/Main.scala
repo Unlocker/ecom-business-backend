@@ -1,6 +1,6 @@
 package com.ecom.point
 
-import com.ecom.point.configs.QuillContext
+import com.ecom.point.configs.{QuillContext, TochkaBankConfig}
 import com.ecom.point.users.endpoints.{Handlers => ServerHandlers}
 import com.ecom.point.banks.endpoints.{Handlers => ClientHandlers}
 import com.ecom.point.banks.repos.BankRepository
@@ -15,24 +15,21 @@ import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault}
 object Main extends ZIOAppDefault {
 	
 	override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] = {
-		val client = ClientHandlers
-			.clientBankApi.
-			provide(
-				Client.default,
-				TochkaBankService.layer,
-				BankRepository.layer,
-				QuillContext.layer
-			)
+	
 		
-		val server = Server
-			.serve(ServerHandlers.authApi @@ RequestHandlerMiddlewares.requestLogging())
+		Server
+			.serve(ServerHandlers.authApi ++ ClientHandlers.clientBankApi @@ RequestHandlerMiddlewares.requestLogging())
 			.provide(
 				Server.default,
+				Client.default,
 				UserService.layer,
+				TochkaBankService.layer,
 				UserRepository.layer,
-				QuillContext.layer
+				BankRepository.layer,
+				QuillContext.layer,
+				TochkaBankConfig.layer
 			)
-		server zip client
+		
 	}
 	
 	
