@@ -14,6 +14,7 @@ val commonSettings = Seq(
   run / fork := true,
   resolvers ++= Seq(
     Resolver.mavenLocal,
+    Resolver.mavenCentral,
     "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     "Sonatype OSS Releases" at "https://oss.sonatype.org/content/repositories/releases"
   ),
@@ -33,6 +34,9 @@ val commonSettings = Seq(
     "com.beachape" %% "enumeratum" % "1.7.3",
     "dev.zio" %% "zio-logging" % Dependencies.zioLoggingVersion,
     "ch.qos.logback" % "logback-classic" % Dependencies.logback,
+    "com.softwaremill.sttp.client3" %% "armeria-backend-zio" % Dependencies.sttpClientVersion
+      exclude("io.netty", "netty-resolver-dns-native-macos"),
+    "com.softwaremill.sttp.client3" %% "zio-json" % Dependencies.sttpClientVersion,
     "io.github.scottweaver" %% "zio-2-0-testcontainers-postgresql" % TestDependencies.zioTestContainer % Test,
     "io.github.scottweaver" %% "zio-2-0-db-migration-aspect" % TestDependencies.zioTestContainer % Test,
     "dev.zio" %% "zio-test" % TestDependencies.zioVersion % Test,

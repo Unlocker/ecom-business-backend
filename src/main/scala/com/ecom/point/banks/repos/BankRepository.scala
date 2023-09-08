@@ -17,7 +17,7 @@ trait BankRepository {
 	
 	def getBankAccessTokenById(tokenId: AccessTokenId): Task[Option[BankAccessToken]]
 	
-	def getBankAccessTokenByUserId(usertId: UserId): Task[Option[BankAccessToken]]
+	def getBankAccessTokenByUserId(userId: UserId): Task[Option[BankAccessToken]]
 	
 	def updateBankAccessToken(bankAccessToken: BankAccessToken): IO[RepositoryError, BankAccessToken]
 }

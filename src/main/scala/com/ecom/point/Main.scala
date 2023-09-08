@@ -18,7 +18,7 @@ object Main extends ZIOAppDefault {
 	
 		
 		Server
-			.serve(ServerHandlers.authApi ++ ClientHandlers.clientBankApi @@ RequestHandlerMiddlewares.requestLogging)
+			.serve(ServerHandlers.authApi ++ ClientHandlers.clientBankApi @@ RequestHandlerMiddlewares.requestLogging _)
 			.provide(
 				Server.default,
 				Client.default,
