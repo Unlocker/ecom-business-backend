@@ -5,8 +5,8 @@ import zio.json.{DeriveJsonCodec, JsonCodec}
 
 import java.time.LocalDate
 
-case class BankStatement(
-                          statementId: StatementId,
+case class BankTransaction(
+                          transactionId: TransactionId,
                           accountId: AccountId,
                           bank: BankType,
                           direction: StatementDirection,
@@ -15,6 +15,6 @@ case class BankStatement(
                           amount: Money
                         )
 
-object BankStatement {
-  implicit val tokenCodec: JsonCodec[BankStatement] = DeriveJsonCodec.gen[BankStatement]
+object BankTransaction {
+  implicit val tokenCodec: JsonCodec[BankTransaction] = DeriveJsonCodec.gen[BankTransaction]
 }

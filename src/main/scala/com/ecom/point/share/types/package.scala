@@ -117,9 +117,9 @@ package object types {
 
   type CompanyName = CompanyName.Type
 
-  object StatementId extends StringType
+  object TransactionId extends StringType
 
-  type StatementId = StatementId.Type
+  type TransactionId = TransactionId.Type
 
   object UserId extends UUIDType
 
