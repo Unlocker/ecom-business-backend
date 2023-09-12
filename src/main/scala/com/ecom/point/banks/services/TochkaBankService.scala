@@ -27,7 +27,8 @@ trait TochkaBankService {
 }
 
 object TochkaBankService {
-  def layer: ZLayer[SttpBackend[Task, Any] with TochkaBankConfig with BankRepository, Nothing, TochkaBankServiceLive] = ZLayer.fromFunction(TochkaBankServiceLive.apply _)
+  def layer: ZLayer[SttpBackend[Task, Any] with TochkaBankConfig with BankRepository, Nothing, TochkaBankServiceLive]
+  = ZLayer.fromFunction(TochkaBankServiceLive.apply _)
 }
 
 final case class TochkaBankServiceLive(
@@ -42,7 +43,7 @@ final case class TochkaBankServiceLive(
 
   private final case class TochkaAccessToken(token_type: String, refresh_token: String, access_token: String, expires_in: Int)
 
-  implicit val tochkaAccessTokenDecoder: JsonCodec[TochkaAccessToken] = DeriveJsonCodec.gen[TochkaAccessToken]
+  private implicit val tochkaAccessTokenDecoder: JsonCodec[TochkaAccessToken] = DeriveJsonCodec.gen[TochkaAccessToken]
 
   private val errorHandler: PartialFunction[Throwable, AppError] = {
     case x: AppError => x
@@ -136,9 +137,9 @@ final case class TochkaBankServiceLive(
 
   private final case class TochkaBalanceResponse(Data: TochkaBalanceList)
 
-  implicit val tochkaBalanceDecoder: JsonCodec[TochkaBalance] = DeriveJsonCodec.gen[TochkaBalance]
-  implicit val tochkaBalanceListDecoder: JsonCodec[TochkaBalanceList] = DeriveJsonCodec.gen[TochkaBalanceList]
-  implicit val tochkaBalanceResponseDecoder: JsonCodec[TochkaBalanceResponse] = DeriveJsonCodec.gen[TochkaBalanceResponse]
+  private implicit val tochkaBalanceDecoder: JsonCodec[TochkaBalance] = DeriveJsonCodec.gen[TochkaBalance]
+  private implicit val tochkaBalanceListDecoder: JsonCodec[TochkaBalanceList] = DeriveJsonCodec.gen[TochkaBalanceList]
+  private implicit val tochkaBalanceResponseDecoder: JsonCodec[TochkaBalanceResponse] = DeriveJsonCodec.gen[TochkaBalanceResponse]
 
   override def balances(user: User, token: BankAccessToken): IO[AppError, List[BankAccountBalance]] = {
     val balancesTask = basicRequest
@@ -167,9 +168,9 @@ final case class TochkaBankServiceLive(
 
   private final case class TochkaStatementRequest(Data: TochkaStatementQuery)
 
-  implicit val tochkaStatementParamsDecoder: JsonCodec[TochkaStatementParams] = DeriveJsonCodec.gen[TochkaStatementParams]
-  implicit val tochkaStatementQueryDecoder: JsonCodec[TochkaStatementQuery] = DeriveJsonCodec.gen[TochkaStatementQuery]
-  implicit val tochkaStatementRequestDecoder: JsonCodec[TochkaStatementRequest] = DeriveJsonCodec.gen[TochkaStatementRequest]
+  private implicit val tochkaStatementParamsDecoder: JsonCodec[TochkaStatementParams] = DeriveJsonCodec.gen[TochkaStatementParams]
+  private implicit val tochkaStatementQueryDecoder: JsonCodec[TochkaStatementQuery] = DeriveJsonCodec.gen[TochkaStatementQuery]
+  private implicit val tochkaStatementRequestDecoder: JsonCodec[TochkaStatementRequest] = DeriveJsonCodec.gen[TochkaStatementRequest]
 
   private final case class TochkaParty(inn: String, name: String)
 
@@ -194,11 +195,11 @@ final case class TochkaBankServiceLive(
 
   private final case class TochkaStatementResponse(Data: TochkaStatementResult)
 
-  implicit val tochkaPartyDecoder: JsonCodec[TochkaParty] = DeriveJsonCodec.gen[TochkaParty]
-  implicit val tochkaTransactionDecoder: JsonCodec[TochkaTransaction] = DeriveJsonCodec.gen[TochkaTransaction]
-  implicit val tochkaStatementDecoder: JsonCodec[TochkaStatement] = DeriveJsonCodec.gen[TochkaStatement]
-  implicit val tochkaStatementResultDecoder: JsonCodec[TochkaStatementResult] = DeriveJsonCodec.gen[TochkaStatementResult]
-  implicit val tochkaStatementResponseDecoder: JsonCodec[TochkaStatementResponse] = DeriveJsonCodec.gen[TochkaStatementResponse]
+  private implicit val tochkaPartyDecoder: JsonCodec[TochkaParty] = DeriveJsonCodec.gen[TochkaParty]
+  private implicit val tochkaTransactionDecoder: JsonCodec[TochkaTransaction] = DeriveJsonCodec.gen[TochkaTransaction]
+  private implicit val tochkaStatementDecoder: JsonCodec[TochkaStatement] = DeriveJsonCodec.gen[TochkaStatement]
+  private implicit val tochkaStatementResultDecoder: JsonCodec[TochkaStatementResult] = DeriveJsonCodec.gen[TochkaStatementResult]
+  private implicit val tochkaStatementResponseDecoder: JsonCodec[TochkaStatementResponse] = DeriveJsonCodec.gen[TochkaStatementResponse]
 
   override def transactions(user: User, token: BankAccessToken, accountId: AccountId, start: LocalDate, end: LocalDate)
   : IO[AppError, List[BankTransaction]] = {

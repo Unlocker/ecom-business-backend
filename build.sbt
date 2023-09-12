@@ -40,10 +40,13 @@ val commonSettings = Seq(
     "io.github.scottweaver" %% "zio-2-0-testcontainers-postgresql" % TestDependencies.zioTestContainer % Test,
     "io.github.scottweaver" %% "zio-2-0-db-migration-aspect" % TestDependencies.zioTestContainer % Test,
     "dev.zio" %% "zio-test" % TestDependencies.zioVersion % Test,
-    "dev.zio" %% "zio-test-sbt" % TestDependencies.zioVersion % Test
-  
+    "dev.zio" %% "zio-test-sbt" % TestDependencies.zioVersion % Test,
+    "dev.zio" %% "zio-test-magnolia" % TestDependencies.zioVersion % Test
   )
 )
+
+testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+
 
 lazy val root = (project in file("."))
   .settings(
