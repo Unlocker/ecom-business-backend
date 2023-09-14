@@ -7,6 +7,9 @@ import com.ecom.point.banks.repos.BankRepository
 import com.ecom.point.banks.services.TochkaBankService
 import com.ecom.point.users.repos.UserRepository
 import com.ecom.point.users.services.UserService
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
+import sttp.client3.httpclient.zio.HttpClientZioBackend
 import sttp.client3.armeria.ArmeriaWebClient
 import sttp.client3.testing
 import sttp.client3.testing.SttpBackendStub
@@ -28,7 +31,8 @@ object Main extends ZIOAppDefault {
 				UserRepository.layer,
 				BankRepository.layer,
 				QuillContext.layer,
-				TochkaBankConfig.layer
+				TochkaBankConfig.layer,
+				HttpClientZioBackend.layer()
 			)
 		
 	}

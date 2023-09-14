@@ -1,9 +1,9 @@
 package com.ecom.point.banks.services
 
-import com.ecom.point.banks.models.{BankAccessToken, BankAccountBalance, BankTransaction, Money}
+import com.ecom.point.banks.models._
 import com.ecom.point.banks.repos.BankRepository
 import com.ecom.point.configs.TochkaBankConfig
-import com.ecom.point.share.types.{AccessToken, AccessTokenId, AccountId, BankType, ExpirationTokenDate, RefreshToken, UserId}
+import com.ecom.point.share.types._
 import com.ecom.point.users.models.User
 import com.ecom.point.utils.{AppError, InternalError}
 import sttp.client3.SttpBackend
@@ -24,7 +24,7 @@ trait TochkaBankService {
 
   def balances(user: User, token: BankAccessToken): IO[AppError, List[BankAccountBalance]]
 
-  def statements(user: User, token: BankAccessToken, accountId: AccountId, start: LocalDate, end: LocalDate): IO[AppError, List[BankTransaction]]
+  def transactions(user: User, token: BankAccessToken, accountId: AccountId, start: LocalDate, end: LocalDate): IO[AppError, List[BankTransaction]]
 }
 
 object TochkaBankService {
@@ -171,7 +171,16 @@ final case class TochkaBankServiceLive(
   implicit val tochkaStatementQueryDecoder: JsonCodec[TochkaStatementQuery] = DeriveJsonCodec.gen[TochkaStatementQuery]
   implicit val TochkaStatementRequestDecoder: JsonCodec[TochkaStatementRequest] = DeriveJsonCodec.gen[TochkaStatementRequest]
 
-  private final case class TochkaTransaction()
+  private final case class TochkaParty(inn: String, name: String)
+
+  private final case class TochkaTransaction(
+                                              transactionId: String,
+                                              creditDebitIndicator: String,
+                                              documentProcessDate: LocalDate,
+                                              Amount: Money,
+                                              DebtorParty: TochkaParty,
+                                              CreditorParty: TochkaParty
+                                            )
 
   private final case class TochkaStatement(
                                             accountId: String,
@@ -181,6 +190,68 @@ final case class TochkaBankServiceLive(
                                             Transaction: List[TochkaTransaction]
                                           )
 
-  override def statements(user: User, token: BankAccessToken, accountId: AccountId, start: LocalDate, end: LocalDate):
-  IO[AppError, List[BankTransaction]] = ???
+  private final case class TochkaStatementResult(Statement: TochkaStatement)
+
+  private final case class TochkaStatementResponse(Data: TochkaStatementResult)
+
+  private implicit val tochkaPartyDecoder: JsonCodec[TochkaParty] = DeriveJsonCodec.gen[TochkaParty]
+  private implicit val tochkaTransactionDecoder: JsonCodec[TochkaTransaction] = DeriveJsonCodec.gen[TochkaTransaction]
+  private implicit val tochkaStatementDecoder: JsonCodec[TochkaStatement] = DeriveJsonCodec.gen[TochkaStatement]
+  private implicit val tochkaStatementResultDecoder: JsonCodec[TochkaStatementResult] = DeriveJsonCodec.gen[TochkaStatementResult]
+  private implicit val tochkaStatementResponseDecoder: JsonCodec[TochkaStatementResponse] = DeriveJsonCodec.gen[TochkaStatementResponse]
+
+  override def transactions(user: User, token: BankAccessToken, accountId: AccountId, start: LocalDate, end: LocalDate)
+  : IO[AppError, List[BankTransaction]] = {
+    val params = TochkaStatementParams(accountId = accountId.unwrap, startDateTime = start, endDateTime = end)
+    val statementTask = basicRequest
+      .auth.bearer(token.accessToken.unwrap)
+      .post(uri"${config.url}/uapi/open-banking/v1.0/statements")
+      .body(TochkaStatementRequest(TochkaStatementQuery(params)))
+      .response(asJson[TochkaStatementResponse])
+      .send(client)
+
+    statementTask.flatMap {
+        resp =>
+          resp.body.fold(
+            respEx => {
+              ZIO.fail(InternalError(message = s"${respEx.getMessage}"))
+            },
+            data => {
+              val stmt = data.Data.Statement
+              val transactions = stmt.Transaction.map {
+                tran =>
+                  val direction = tran.creditDebitIndicator match {
+                    case "Credit" => StatementDirection.INCOME
+                    case "Debit" => StatementDirection.OUTCOME
+                  }
+
+                  val partyConverter: TochkaParty => IO[AppError, Counterparty] = p =>
+                    TaxId.make(p.inn).map(Counterparty(CompanyName(p.name), _))
+                      .toZIO
+                      .mapError(mes => InternalError(message = s"Incorrect party tax id is '$mes''"))
+
+                  for {
+                    creditor <- partyConverter(tran.CreditorParty)
+                    debtor <- partyConverter(tran.DebtorParty)
+                  } yield {
+                    BankTransaction(
+                      TransactionId(tran.transactionId),
+                      AccountId(stmt.accountId),
+                      BankType.TOCHKA,
+                      direction,
+                      tran.documentProcessDate,
+                      direction match {
+                        case StatementDirection.INCOME => creditor
+                        case StatementDirection.OUTCOME => debtor
+                      },
+                      tran.Amount
+                    )
+                  }
+              }
+              ZIO.collectAll(transactions)
+            }
+          )
+      }
+      .mapError(errorHandler)
+  }
 }
