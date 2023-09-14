@@ -225,24 +225,31 @@ final case class TochkaBankServiceLive(
                     case "Credit" => StatementDirection.INCOME
                     case "Debit" => StatementDirection.OUTCOME
                   }
-                  BankTransaction(
-                    TransactionId(tran.transactionId),
-                    AccountId(stmt.accountId),
-                    BankType.TOCHKA,
-                    direction,
-                    tran.documentProcessDate,
-                    direction match {
-                      case StatementDirection.INCOME => Counterparty(
-                        CompanyName(tran.CreditorParty.name), TaxId(tran.CreditorParty.inn)
-                      )
-                      case StatementDirection.OUTCOME => Counterparty(
-                        CompanyName(tran.DebtorParty.name), TaxId(tran.DebtorParty.inn)
-                      )
-                    },
-                    tran.Amount
-                  )
+
+                  val partyConverter: TochkaParty => IO[AppError, Counterparty] = p =>
+                    TaxId.make(p.inn).map(Counterparty(CompanyName(p.name), _))
+                      .toZIO
+                      .mapError(mes => InternalError(message = s"Incorrect party tax id is '$mes''"))
+
+                  for {
+                    creditor <- partyConverter(tran.CreditorParty)
+                    debtor <- partyConverter(tran.DebtorParty)
+                  } yield {
+                    BankTransaction(
+                      TransactionId(tran.transactionId),
+                      AccountId(stmt.accountId),
+                      BankType.TOCHKA,
+                      direction,
+                      tran.documentProcessDate,
+                      direction match {
+                        case StatementDirection.INCOME => creditor
+                        case StatementDirection.OUTCOME => debtor
+                      },
+                      tran.Amount
+                    )
+                  }
               }
-              ZIO.succeed(transactions)
+              ZIO.collectAll(transactions)
             }
           )
       }
