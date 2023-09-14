@@ -7,8 +7,9 @@ import com.ecom.point.banks.repos.BankRepository
 import com.ecom.point.banks.services.TochkaBankService
 import com.ecom.point.users.repos.UserRepository
 import com.ecom.point.users.services.UserService
-import io.getquill.SnakeCase
-import io.getquill.jdbczio.Quill
+import sttp.client3.armeria.ArmeriaWebClient
+import sttp.client3.testing
+import sttp.client3.testing.SttpBackendStub
 import zio.http._
 import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault}
 
@@ -18,7 +19,7 @@ object Main extends ZIOAppDefault {
 	
 		
 		Server
-			.serve(ServerHandlers.authApi ++ ClientHandlers.clientBankApi @@ RequestHandlerMiddlewares.requestLogging _)
+			.serve(ServerHandlers.authApi @@ AuthMiddleware.authorization _)
 			.provide(
 				Server.default,
 				Client.default,

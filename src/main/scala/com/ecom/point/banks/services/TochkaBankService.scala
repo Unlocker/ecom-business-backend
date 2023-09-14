@@ -7,6 +7,7 @@ import com.ecom.point.share.types.{AccessToken, AccessTokenId, AccountId, BankTy
 import com.ecom.point.users.models.User
 import com.ecom.point.utils.{AppError, InternalError}
 import sttp.client3.SttpBackend
+import sttp.client3.httpclient.zio.SttpClient
 import zio.json.{DeriveJsonCodec, JsonCodec}
 import zio.{IO, Task, ZIO, ZLayer}
 
@@ -27,7 +28,7 @@ trait TochkaBankService {
 }
 
 object TochkaBankService {
-  def layer: ZLayer[SttpBackend[Task, Any] with TochkaBankConfig with BankRepository, Nothing, TochkaBankServiceLive] = ZLayer.fromFunction(TochkaBankServiceLive.apply _)
+  def layer: ZLayer[SttpClient with TochkaBankConfig with BankRepository, Nothing, TochkaBankServiceLive] = ZLayer.fromFunction(TochkaBankServiceLive.apply _)
 }
 
 final case class TochkaBankServiceLive(
@@ -40,7 +41,7 @@ final case class TochkaBankServiceLive(
   import sttp.client3._
   import sttp.client3.ziojson._
 
-  private final case class TochkaAccessToken(token_type: String, refresh_token: String, access_token: String, expires_in: Int)
+  final case class TochkaAccessToken(token_type: String, refresh_token: String, access_token: String, expires_in: Int)
 
   implicit val tochkaAccessTokenDecoder: JsonCodec[TochkaAccessToken] = DeriveJsonCodec.gen[TochkaAccessToken]
 
@@ -126,15 +127,15 @@ final case class TochkaBankServiceLive(
       .mapError(errorHandler)
   }
 
-  private final case class TochkaBalance(
-                                          accountId: String,
-                                          dateTime: ZonedDateTime,
-                                          Amount: Money
-                                        )
+  protected final case class TochkaBalance(
+                                            accountId: String,
+                                            dateTime: ZonedDateTime,
+                                            Amount: Money
+                                          )
 
-  private final case class TochkaBalanceList(Balances: List[TochkaBalance])
+  protected final case class TochkaBalanceList(Balances: List[TochkaBalance])
 
-  private final case class TochkaBalanceResponse(Data: TochkaBalanceList)
+  protected final case class TochkaBalanceResponse(Data: TochkaBalanceList)
 
   implicit val tochkaBalanceDecoder: JsonCodec[TochkaBalance] = DeriveJsonCodec.gen[TochkaBalance]
   implicit val tochkaBalanceListDecoder: JsonCodec[TochkaBalanceList] = DeriveJsonCodec.gen[TochkaBalanceList]
@@ -161,11 +162,10 @@ final case class TochkaBankServiceLive(
       .mapError(errorHandler)
   }
 
-  private final case class TochkaStatementParams(accountId: String, startDateTime: LocalDate, endDateTime: LocalDate)
+  protected final case class TochkaStatementParams(accountId: String, startDateTime: LocalDate, endDateTime: LocalDate)
+  protected final case class TochkaStatementQuery(Statement: TochkaStatementParams)
 
-  private final case class TochkaStatementQuery(Statement: TochkaStatementParams)
-
-  private final case class TochkaStatementRequest(Data: TochkaStatementQuery)
+  protected final case class TochkaStatementRequest(Data: TochkaStatementQuery)
 
   implicit val TochkaStatementParamsDecoder: JsonCodec[TochkaStatementParams] = DeriveJsonCodec.gen[TochkaStatementParams]
   implicit val tochkaStatementQueryDecoder: JsonCodec[TochkaStatementQuery] = DeriveJsonCodec.gen[TochkaStatementQuery]

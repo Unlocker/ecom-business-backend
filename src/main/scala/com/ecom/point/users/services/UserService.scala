@@ -3,9 +3,10 @@ package com.ecom.point.users.services
 
 import com.ecom.point.share.types._
 import com.ecom.point.users.endpoints.EndpointData.SignUpRequest
+import com.ecom.point.users.models.User
 import com.ecom.point.users.repos.UserRepository
 import com.ecom.point.utils.AppError
-import zio.{IO, ZLayer}
+import zio.{IO, Task, ZLayer}
 
 
 
@@ -13,6 +14,7 @@ import zio.{IO, ZLayer}
 
 trait UserService {
 	def signUp(signUpRequest: SignUpRequest): IO[AppError, AccessToken]
+	def getUserById(id: UserId): Task[Option[User]]
 }
 
 object UserService {
@@ -37,6 +39,10 @@ case class UserServiceLive(userRepository: UserRepository) extends UserService{
 //		} yield ()
 //
 //	}
+	
+	override def getUserById(id: UserId): Task[Option[User]] = {
+		userRepository.getUserById(id)
+	}
 }
 
 
