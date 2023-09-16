@@ -6,6 +6,11 @@ import zio.schema.{DeriveSchema, Schema}
 
 
 object EndpointData {
+	trait ApiError
+	final case class PhoneAlreadyUsed(code: Int  = 150, msg: String = "Phone number already used other user" ) extends ApiError
+	object PhoneAlreadyUsed{
+		implicit val signUpRequestSchema: Schema[PhoneAlreadyUsed] = DeriveSchema.gen[PhoneAlreadyUsed]
+	}
 	final case class SignUpRequest(phoneNumber: PhoneNumber, name: Name, password: Password, passwordAgain: Password)
 	object SignUpRequest {
 		implicit val signUpRequestSchema: Schema[SignUpRequest] = DeriveSchema.gen[SignUpRequest]

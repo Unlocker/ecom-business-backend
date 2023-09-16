@@ -7,11 +7,11 @@ import com.ecom.point.utils.RepositoryError
 import com.ecom.point.utils.SchemeConverter._
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
-import zio.{IO, Task, ZLayer}
+import zio.{IO, Task, ZIO, ZLayer}
 
 
 trait UserRepository {
-	def createUser(user: User): IO[RepositoryError, User]
+	def createUser(user: User): IO[Exception, Int]
 	
 	def deleteUser(userId: UserId.Type): IO[RepositoryError, Int]
 	
@@ -30,9 +30,16 @@ case class UserRepositoryLive(dataSource: Quill.Postgres[SnakeCase]) extends Use
 	
 	import dataSource._
 
-	override def createUser(user: User): IO[RepositoryError, User] = {
-		run(Queries.createUser(user))
-			.asModelWithMapError(err => RepositoryError(err))
+	override def createUser(user: User): IO[Exception, Int] = {
+		run(Queries.itsPhoneNotUsed(user.phoneNumber)).flatMap{ isFree =>
+			if (isFree) {
+				println(isFree)
+				run(Queries.createUser(user)).asModelWithMapError(err => RepositoryError(err))
+			} else {
+					ZIO.fail[RepositoryError](RepositoryError.PhoneNumberMustBeUnique(23505, "Указанный номер зарегистрирован на другое лицо в нашей системе"))
+						.mapBoth(err => err, _ => 0)
+			}
+		}
 	}
 	
 	override def deleteUser(userId: UserId): IO[RepositoryError, Int] = {

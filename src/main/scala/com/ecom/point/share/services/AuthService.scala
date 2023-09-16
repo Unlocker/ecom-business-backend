@@ -2,7 +2,8 @@ package com.ecom.point.share.services
 
 import com.ecom.point.share.types._
 import com.ecom.point.share.repos.Queries
-import com.ecom.point.users.models.UserAccessToken
+import com.ecom.point.users.models.{User, UserAccessToken}
+import com.ecom.point.users.repos.UserDbo
 import com.ecom.point.utils.SchemeConverter._
 import com.ecom.point.utils.{AppError, Unauthorized}
 import io.getquill.SnakeCase
@@ -16,7 +17,7 @@ import java.security.MessageDigest
 import java.time.{Clock, Instant}
 
 trait AuthService {
-	def auth(userAccessToken: AccessToken.Type): IO[AppError, AccessToken.Type]
+	def auth(userAccessToken: AccessToken): IO[AppError, (AccessToken, User)]
 }
 
 object AuthService{
@@ -56,7 +57,7 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase]) extends 
 		Jwt.decode(AccessToken.unwrap(userAccessToken), RefreshToken.unwrap(key.value), Seq(JwtAlgorithm.HS512)).toOption
 	}
 
-	override def auth(userAccessToken: AccessToken): IO[AppError, AccessToken] = {
+	override def auth(userAccessToken: AccessToken): IO[AppError, (AccessToken, User)] = {
 		run(Queries.getUserAccessTokenByValue(userAccessToken))
 			.map(_.headOption)
 			.flatMap { tokenWithUser =>
@@ -67,18 +68,18 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase]) extends 
 							val clock: Clock = Clock.systemUTC()
 							val exAccess = jwtDecode(token.accessToken)(SecretKey(token.refreshToken)).flatMap(_.expiration)
 							if (exAccess.exists(_ < JwtTime.nowSeconds(clock))) {
-								ZIO.attempt(token.accessToken).orElseFail(Unauthorized())
+								ZIO.attempt((token.accessToken, User.converterFromDbo(user))).orElseFail(Unauthorized())
 							} else {
 								val newAccessToken = jwtEncode(user.phoneNumber)(SecretKey(token.refreshToken))
 								val newToken = Seq(token.copy(accessToken = newAccessToken._1)).asModel(UserAccessToken.converterFromDbo)
 								run(Queries.updateUserAccessToken(newToken.head))
-									.mapBoth(_ => Unauthorized(), _ => newAccessToken._1)
+									.mapBoth(_ => Unauthorized(), _ => (newAccessToken._1, User.converterFromDbo(user)))
 							}
 						} else {
 							ZIO.fail(Unauthorized())
 						}
 					}
 				}
-			}.orElseFail(Unauthorized())
-	}
+			}
+	}.orElseFail(Unauthorized())
 }

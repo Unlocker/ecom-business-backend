@@ -33,14 +33,18 @@ object Queries {
 			)
 	}
 	
-	implicit val insertUser: InsertMeta[UserDbo] = insertMeta(_.id, _.createdAt)
-	
-	implicit val updateUser: UpdateMeta[UserDbo] = updateMeta(_.id, _.phoneNumber, _.createdAt)
+//	implicit val insertUser: InsertMeta[UserDbo] = insertMeta(_.id, _.createdAt)
+//
+//	implicit val updateUser: UpdateMeta[UserDbo] = updateMeta(_.id, _.phoneNumber, _.createdAt)
 	
 	
 	lazy val users: Quoted[EntityQuery[UserDbo]] = quote (
 		query[UserDbo]
 	)
+	
+	implicit class RightQuery[T](q: Query[T]) {
+		def rightSymbolPhone(phoneNumber: PhoneNumber) = quote(sql"$q RIGHT(${phoneNumber}, ${11})".as[Query[T]])
+	}
 	
 	
 	def getUsers: Quoted[EntityQuery[UserDbo]] = quote (users)
@@ -51,12 +55,19 @@ object Queries {
 			 .filter(_.id == lift(id))
 	)
 	
-	def createUser(user: User): Quoted[ActionReturning[UserDbo, UserDbo]] = {
+	def itsPhoneNotUsed(phoneNumber: PhoneNumber): Quoted[Boolean] = quote(
+		query[UserDbo]
+			.filter(u =>
+				sql"RIGHT(${u.phoneNumber}, ${10})".pure.as[PhoneNumber] == lift(PhoneNumber(phoneNumber.unwrap.takeRight(10)))
+			).isEmpty
+	)
+	
+	def createUser(user: User): Quoted[ActionReturning[UserDbo, Index]] = {
 		val userDbo = user.toDbo
 		quote (
 			users
 				.insertValue(lift(userDbo))
-				 .returning(acc => acc)
+				 .returning(_ => 1)
 			)
 	 }
 	
