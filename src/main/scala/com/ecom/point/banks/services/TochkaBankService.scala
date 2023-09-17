@@ -8,10 +8,12 @@ import com.ecom.point.users.models.User
 import com.ecom.point.utils.{AppError, InternalError}
 import sttp.client3.SttpBackend
 import sttp.client3.httpclient.zio.SttpClient
+import sttp.model.MediaType.{ApplicationJson, ApplicationXWwwFormUrlencoded}
+import zio.http.Charsets
 import zio.json.{DeriveJsonCodec, JsonCodec}
 import zio.{IO, Task, ZIO, ZLayer}
 
-import java.net.URI
+import java.net.{URI, URLEncoder}
 import java.time.{Instant, LocalDate, ZonedDateTime}
 import java.util.UUID
 
@@ -24,11 +26,18 @@ trait TochkaBankService {
 
   def balances(user: User, token: BankAccessToken): IO[AppError, List[BankAccountBalance]]
 
-  def transactions(user: User, token: BankAccessToken, accountId: AccountId, start: LocalDate, end: LocalDate): IO[AppError, List[BankTransaction]]
+  def transactions(
+                    user: User,
+                    token: BankAccessToken,
+                    accountId: AccountId,
+                    start: LocalDate,
+                    end: LocalDate
+                  ): IO[AppError, List[BankTransaction]]
 }
 
 object TochkaBankService {
-  def layer: ZLayer[SttpClient with TochkaBankConfig with BankRepository, Nothing, TochkaBankServiceLive] = ZLayer.fromFunction(TochkaBankServiceLive.apply _)
+  def layer: ZLayer[SttpClient with TochkaBankConfig with BankRepository, Nothing, TochkaBankServiceLive]
+  = ZLayer.fromFunction(TochkaBankServiceLive.apply _)
 }
 
 final case class TochkaBankServiceLive(
@@ -58,16 +67,73 @@ final case class TochkaBankServiceLive(
     userId
   )
 
+  private val tokenUri = uri"${config.url}/connect/token"
+
   override def authorize(user: User): IO[AppError, Option[URI]] =
     bankRepository.getBankAccessTokenByUserId(user.id)
-      .map {
-        case None => Some(URI.create(config.url))
-        case Some(_) => None
+      .flatMap {
+        case None => makeRedirectUrl(user).map(Some(_))
+        case Some(_) => ZIO.succeed(None)
       }
       .mapError(errorHandler)
 
+  private val scope = "accounts balances statements"
 
-  private val tokenUri = uri"${config.url}/connect/token"
+  private case class TochkaConsent(consentId: String)
+
+  private case class TochkaConsentResponse(Data: TochkaConsent)
+
+  private implicit val tochkaConsentDecoder: JsonCodec[TochkaConsent] = DeriveJsonCodec.gen[TochkaConsent]
+  private implicit val tochkaConsentResponseDecoder: JsonCodec[TochkaConsentResponse] = DeriveJsonCodec.gen[TochkaConsentResponse]
+
+
+  def makeRedirectUrl(user: User): IO[AppError, URI] = {
+    val uriEffect = for {
+      serviceToken <- basicRequest
+        .contentType(ApplicationXWwwFormUrlencoded)
+        .body(
+          Map(
+            "client_id" -> config.clientId,
+            "client_secret" -> config.clientSecret,
+            "grant_type" -> "client_credentials",
+            "scope" -> scope
+          )
+        )
+        .post(tokenUri)
+        .response(asJsonAlways[TochkaAccessToken])
+        .send(client)
+        .flatMap(_.body.fold(ex => ZIO.fail(InternalError(message = ex.getMessage)), t => ZIO.succeed(t.access_token)))
+
+      consentId <- basicRequest
+        .contentType(ApplicationJson)
+        .auth.bearer(serviceToken)
+        .body(
+          """
+            |{
+            |  "Data" : {
+            |    "permissions": [
+            |      "ReadAccountsBasic", "ReadAccountsDetail", "ReadBalances", "ReadStatements"
+            |    ]
+            |  }
+            |} """.stripMargin
+        )
+        .post(uri"${config.url}/uapi/v1.0/consents")
+        .response(asJsonAlways[TochkaConsentResponse])
+        .send(client)
+        .flatMap(_.body.fold(ex => ZIO.fail(InternalError(message = ex.getMessage)), r => ZIO.succeed(r.Data.consentId)))
+    } yield {
+      URI.create(
+        s"${config.url}/connect/authorize" +
+          s"?client_id=${config.clientId}" +
+          s"&response_type=code%20id_token" +
+          s"&state=${user.id.unwrap}" +
+          s"&redirect_uri=${URLEncoder.encode(config.redirectUri, Charsets.Utf8)}" +
+          s"&scope=${URLEncoder.encode(scope, Charsets.Utf8)}" +
+          s"&consent_id=$consentId"
+      )
+    }
+    uriEffect.mapError(errorHandler)
+  }
 
   override def fetchToken(user: User, code: String): IO[AppError, BankAccessToken] = {
     val responseTask = basicRequest
@@ -76,7 +142,7 @@ final case class TochkaBankServiceLive(
           "client_id" -> config.clientId,
           "client_secret" -> config.clientSecret,
           "grant_type" -> "authorization_code",
-          "scope" -> "accounts balances statements",
+          "scope" -> scope,
           "code" -> code,
           "redirect_url" -> "http://localhost:8000/"
         )
@@ -127,19 +193,19 @@ final case class TochkaBankServiceLive(
       .mapError(errorHandler)
   }
 
-  protected final case class TochkaBalance(
-                                            accountId: String,
-                                            dateTime: ZonedDateTime,
-                                            Amount: Money
-                                          )
+  private final case class TochkaBalance(
+                                          accountId: String,
+                                          dateTime: ZonedDateTime,
+                                          Amount: Money
+                                        )
 
-  protected final case class TochkaBalanceList(Balances: List[TochkaBalance])
+  private final case class TochkaBalanceList(Balances: List[TochkaBalance])
 
-  protected final case class TochkaBalanceResponse(Data: TochkaBalanceList)
+  private final case class TochkaBalanceResponse(Data: TochkaBalanceList)
 
-  implicit val tochkaBalanceDecoder: JsonCodec[TochkaBalance] = DeriveJsonCodec.gen[TochkaBalance]
-  implicit val tochkaBalanceListDecoder: JsonCodec[TochkaBalanceList] = DeriveJsonCodec.gen[TochkaBalanceList]
-  implicit val tochkaBalanceResponseDecoder: JsonCodec[TochkaBalanceResponse] = DeriveJsonCodec.gen[TochkaBalanceResponse]
+  private implicit val tochkaBalanceDecoder: JsonCodec[TochkaBalance] = DeriveJsonCodec.gen[TochkaBalance]
+  private implicit val tochkaBalanceListDecoder: JsonCodec[TochkaBalanceList] = DeriveJsonCodec.gen[TochkaBalanceList]
+  private implicit val tochkaBalanceResponseDecoder: JsonCodec[TochkaBalanceResponse] = DeriveJsonCodec.gen[TochkaBalanceResponse]
 
   override def balances(user: User, token: BankAccessToken): IO[AppError, List[BankAccountBalance]] = {
     val balancesTask = basicRequest
@@ -162,14 +228,15 @@ final case class TochkaBankServiceLive(
       .mapError(errorHandler)
   }
 
-  protected final case class TochkaStatementParams(accountId: String, startDateTime: LocalDate, endDateTime: LocalDate)
-  protected final case class TochkaStatementQuery(Statement: TochkaStatementParams)
+  private final case class TochkaStatementParams(accountId: String, startDateTime: LocalDate, endDateTime: LocalDate)
 
-  protected final case class TochkaStatementRequest(Data: TochkaStatementQuery)
+  private final case class TochkaStatementQuery(Statement: TochkaStatementParams)
 
-  implicit val TochkaStatementParamsDecoder: JsonCodec[TochkaStatementParams] = DeriveJsonCodec.gen[TochkaStatementParams]
-  implicit val tochkaStatementQueryDecoder: JsonCodec[TochkaStatementQuery] = DeriveJsonCodec.gen[TochkaStatementQuery]
-  implicit val TochkaStatementRequestDecoder: JsonCodec[TochkaStatementRequest] = DeriveJsonCodec.gen[TochkaStatementRequest]
+  private final case class TochkaStatementRequest(Data: TochkaStatementQuery)
+
+  private implicit val TochkaStatementParamsDecoder: JsonCodec[TochkaStatementParams] = DeriveJsonCodec.gen[TochkaStatementParams]
+  private implicit val tochkaStatementQueryDecoder: JsonCodec[TochkaStatementQuery] = DeriveJsonCodec.gen[TochkaStatementQuery]
+  private implicit val TochkaStatementRequestDecoder: JsonCodec[TochkaStatementRequest] = DeriveJsonCodec.gen[TochkaStatementRequest]
 
   private final case class TochkaParty(inn: String, name: String)
 

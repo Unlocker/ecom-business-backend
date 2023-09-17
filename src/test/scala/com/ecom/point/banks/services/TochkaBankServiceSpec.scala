@@ -3,16 +3,18 @@ package com.ecom.point.banks.services
 import com.linecorp.armeria.common.HttpStatus
 import sttp.capabilities
 import zio._
+import zio.prelude._
 import zio.test._
 import zio.json._
 import sttp.client3._
 import sttp.model._
+import sttp.client3.ziojson._
 import sttp.client3.httpclient._
 import sttp.client3.httpclient.zio._
 import sttp.client3.impl.zio.RIOMonadAsyncError
 import sttp.client3.testing.SttpBackendStub
 
-class TochkaBankServiceSpec extends ZIOSpecDefault {
+object TochkaBankServiceSpec extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment with Scope, Any] = suite("suite") {
     test("test1") {
       case class User(username: String)
@@ -22,14 +24,13 @@ class TochkaBankServiceSpec extends ZIOSpecDefault {
         .whenRequestMatches(_ => true)
         .thenRespond(""" {"username":"John"} """)
 
-
       for {
-        response: Response[Either[ResponseException[String, String], User]] <- basicRequest
+        response <- basicRequest
           .get(uri"http://example.org/a/b/c")
-          .response(sttp.client3.ziojson.asJson[User])
+          .response(asJson[User])
           .send(testBackend)
       } yield {
-        assertTrue(response.code == StatusCode.Ok)
+        assertTrue(StatusCode.Ok.equals(response.code))
       }
     }
   }
