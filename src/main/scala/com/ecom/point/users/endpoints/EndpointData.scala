@@ -6,11 +6,19 @@ import zio.schema.{DeriveSchema, Schema}
 
 
 object EndpointData {
-	trait ApiError
-	final case class PhoneAlreadyUsed(code: Int  = 150, msg: String = "Phone number already used other user" ) extends ApiError
-	object PhoneAlreadyUsed{
-		implicit val signUpRequestSchema: Schema[PhoneAlreadyUsed] = DeriveSchema.gen[PhoneAlreadyUsed]
+	sealed trait ApiError
+	object ApiError{
+		implicit val phoneAlreadyUsedSchema: Schema[PhoneAlreadyUsed] = DeriveSchema.gen[PhoneAlreadyUsed]
+		implicit val passwordsNotEqualSchema: Schema[PasswordsNotEqual] = DeriveSchema.gen[PasswordsNotEqual]
+		implicit val passwordsOrPhoneHasNotSystem: Schema[PasswordsOrPhoneIncorrect] = DeriveSchema.gen[PasswordsOrPhoneIncorrect]
 	}
+	
+	final case class PhoneAlreadyUsed(code: Int  = 150, msg: String = "Phone number already used other user" ) extends ApiError
+	final case class PasswordsNotEqual(code: Int = 151, msg: String = "Passwords not equal") extends ApiError
+	final case class PasswordsOrPhoneIncorrect(code: Int = 152, msg: String = "phone number or password not correctly") extends ApiError
+	
+	
+	
 	final case class SignUpRequest(phoneNumber: PhoneNumber, name: Name, password: Password, passwordAgain: Password)
 	object SignUpRequest {
 		implicit val signUpRequestSchema: Schema[SignUpRequest] = DeriveSchema.gen[SignUpRequest]
@@ -20,10 +28,4 @@ object EndpointData {
 	object SignInRequest {
 		implicit val signUpRequestSchema: Schema[SignInRequest] = DeriveSchema.gen[SignInRequest]
 	}
-	
-	final case class SignInUpResponse(userAccessJwtToken: AccessToken)
-	object SignInUpResponse {
-		implicit val signUpRequestSchema: Schema[SignInUpResponse] = DeriveSchema.gen[SignInUpResponse]
-	}
-	
 }

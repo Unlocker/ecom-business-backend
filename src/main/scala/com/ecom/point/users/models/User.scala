@@ -16,6 +16,8 @@ final case class User(
 													lastLoginDate: Option[LastLoginDate]
 												)
 
+
+
 object User {
 	implicit val converterFromDbo: UserDbo => User = {
 		dbo =>

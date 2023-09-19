@@ -1,7 +1,10 @@
 package com.ecom.point.share
 
+import com.ecom.point.share
+import com.github.t3hnar.bcrypt.BCrypt
 import enumeratum._
 import io.getquill.MappedEncoding
+import zio.{Task, ZIO}
 import zio.json._
 import zio.prelude.Assertion.matches
 import zio.schema._
@@ -28,7 +31,6 @@ package object types {
     implicit val ord: Ord[Type] = implicitly[Ord[A]].contramap(unwrap)
     implicit val jsonCodec: JsonCodec[Type] = implicitly[JsonCodec[A]].transform(wrap, unwrap)
     implicit val schemeConverter: Schema[Type] = implicitly[Schema[A]].transform(wrap, unwrap)
-
     implicit final class UnwrapOps(value: Type) {
       def unwrap: A = self.unwrap(value)
     }
@@ -52,6 +54,7 @@ package object types {
     implicit val equal: Equal[Type] = implicitly[Equal[A]].contramap(unwrap)
     implicit val jsonCodec: JsonCodec[Type] = implicitly[JsonCodec[A]].transform(wrap, unwrap)
     implicit val schemeConverter: Schema[Type] = implicitly[Schema[A]].transform(wrap, unwrap)
+
 
     implicit final class UnwrapOps(value: Type) {
       def unwrap: A = self.unwrap(value)
@@ -145,7 +148,11 @@ package object types {
 
   type PhoneNumber = PhoneNumber.Type
 
-  object Password extends StringType
+  object Password extends StringType{
+    import com.github.t3hnar.bcrypt._
+    def cryptoSafe(password: Password): Salt => ZIO[Any, Nothing, Password] = salt =>  ZIO.succeed(Password(password.unwrap.bcryptBounded(salt.unwrap)))
+    def getSalt: ZIO[Any, Nothing, Salt] = ZIO.succeed(Salt(generateSalt))
+  }
 
   type Password = Password.Type
 
@@ -168,6 +175,10 @@ package object types {
   object LastLoginDate extends InstantType
 
   type LastLoginDate = LastLoginDate.Type
+  
+  object Salt extends StringType
+  
+  type Salt = Salt.Type
 
 
   implicit def newtypeEncoder[A, T <: RichNewtype[A]#Type](implicit equiv: Equivalence[A, T]): MappedEncoding[T, A] = MappedEncoding[T, A](RichNewtype.unwrap(_))

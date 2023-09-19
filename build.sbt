@@ -29,6 +29,7 @@ val commonSettings = Seq(
     "dev.zio" %% "zio-config" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-schema" % Dependencies.zioSchemaVersion,
 //    "dev.zio" %% "zio-schema-derivation" % Dependencies.zioSchemaVersion,
+    "com.github.t3hnar" %% "scala-bcrypt" % "4.3.0",
     "dev.zio" %% "zio-config-magnolia" % Dependencies.zioConfigVersion,
     "dev.zio" %% "zio-config-typesafe" % Dependencies.zioConfigVersion,
     "com.beachape" %% "enumeratum" % "1.7.3",

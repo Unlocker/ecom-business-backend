@@ -11,7 +11,7 @@ import zio.{IO, Task, ZIO, ZLayer}
 
 
 trait UserRepository {
-	def createUser(user: User): IO[Exception, Int]
+	def createUser(user: User, salt: Salt): IO[Exception, Int]
 	
 	def deleteUser(userId: UserId.Type): IO[RepositoryError, Int]
 	
@@ -20,6 +20,8 @@ trait UserRepository {
 	def getUserById(userId: UserId.Type): Task[Option[User]]
 	
 	def updateUser(user: User): IO[RepositoryError, User]
+	
+	def findUserByPhoneAndPassword(phoneNumber: PhoneNumber, password: Password): Task[Option[User]]
 }
 
 object UserRepository {
@@ -30,11 +32,10 @@ case class UserRepositoryLive(dataSource: Quill.Postgres[SnakeCase]) extends Use
 	
 	import dataSource._
 
-	override def createUser(user: User): IO[Exception, Int] = {
+	override def createUser(user: User, salt: Salt): IO[Exception, Int] = {
 		run(Queries.itsPhoneNotUsed(user.phoneNumber)).flatMap{ isFree =>
 			if (isFree) {
-				println(isFree)
-				run(Queries.createUser(user)).asModelWithMapError(err => RepositoryError(err))
+				run(Queries.createUser(user, salt)).asModelWithMapError(err => RepositoryError(err))
 			} else {
 					ZIO.fail[RepositoryError](RepositoryError.PhoneNumberMustBeUnique(23505, "Указанный номер зарегистрирован на другое лицо в нашей системе"))
 						.mapBoth(err => err, _ => 0)
@@ -61,6 +62,16 @@ case class UserRepositoryLive(dataSource: Quill.Postgres[SnakeCase]) extends Use
 	override def updateUser(user: User): IO[RepositoryError, User] = {
 		run(Queries.updateUser(user))
 			.asModelWithMapError(err => RepositoryError(err))
+	}
+	
+	override def findUserByPhoneAndPassword(phoneNumber: PhoneNumber, password: Password): Task[Option[User]] = {
+		run(Queries.findUserByPhoneNumber(phoneNumber))
+			.map(_.headOption)
+			.flatMap { opt =>
+				opt.fold(ZIO.succeed(false)) { x => Password.cryptoSafe(password)(x.salt).map(_ == x.password) }.map { isValid =>
+					if (isValid) opt else None
+				}
+			}.asModel
 	}
 }
 

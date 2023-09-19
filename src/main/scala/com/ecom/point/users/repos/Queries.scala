@@ -16,11 +16,12 @@ object Queries {
 			_.activateDate -> "activate_date",
 			_.createdAt -> "created_at",
 			_.blockDate -> "block_date",
-			_.lastLoginDate -> "last_login_date"
+			_.lastLoginDate -> "last_login_date",
+			_.salt -> "salt"
 		)
 	
 	implicit class UserToDbo(a: User) {
-		def toDbo: UserDbo =
+		def toDbo: UserDbo = {
 			UserDbo(
 				id = a.id,
 				phoneNumber = a.phoneNumber,
@@ -29,9 +30,13 @@ object Queries {
 				activateDate = a.activateDate,
 				createdAt = a.createdAt,
 				blockDate = a.blockDate,
-				lastLoginDate = a.lastLoginDate
+				lastLoginDate = a.lastLoginDate,
+				salt = Salt("")
 			)
+		}
 	}
+	
+	def withSalt(salt: Salt): UserDbo => UserDbo = dbo => dbo.copy(salt = salt)
 	
 //	implicit val insertUser: InsertMeta[UserDbo] = insertMeta(_.id, _.createdAt)
 //
@@ -50,20 +55,27 @@ object Queries {
 	def getUsers: Quoted[EntityQuery[UserDbo]] = quote (users)
 
 	
-	def getUserById(id: UserId.Type): Quoted[EntityQuery[UserDbo]] = quote (
-		users
-			 .filter(_.id == lift(id))
-	)
+	def getUserById(id: UserId.Type): Quoted[EntityQuery[UserDbo]] =
+		quote (
+			users
+				.filter(_.id == lift(id))
+		)
 	
-	def itsPhoneNotUsed(phoneNumber: PhoneNumber): Quoted[Boolean] = quote(
-		query[UserDbo]
-			.filter(u =>
-				sql"RIGHT(${u.phoneNumber}, ${10})".pure.as[PhoneNumber] == lift(PhoneNumber(phoneNumber.unwrap.takeRight(10)))
-			).isEmpty
-	)
+	def findUserByPhoneNumber(phoneNumber: PhoneNumber) =
+		quote{
+			users.filter(u => u.phoneNumber == lift(phoneNumber))
+		}
 	
-	def createUser(user: User): Quoted[ActionReturning[UserDbo, Index]] = {
-		val userDbo = user.toDbo
+	def itsPhoneNotUsed(phoneNumber: PhoneNumber): Quoted[Boolean] =
+		quote(
+			query[UserDbo]
+				.filter(u =>
+					sql"RIGHT(${u.phoneNumber}, ${10})".pure.as[PhoneNumber] == lift(PhoneNumber(phoneNumber.unwrap.takeRight(10)))
+				).isEmpty
+		)
+	
+	def createUser(user: User, salt: Salt): Quoted[ActionReturning[UserDbo, Index]] = {
+		val userDbo = withSalt(salt)(user.toDbo)
 		quote (
 			users
 				.insertValue(lift(userDbo))
@@ -81,10 +93,11 @@ object Queries {
 		)
 	}
 	
-	def deleteUser(accountId: UserId.Type): Quoted[ActionReturning[UserDbo, Index]] = quote (
-		users
-			 .filter(_.id == accountId)
-			 .delete
-			 .returning(_ => 1)
-	)
-}
+	def deleteUser(accountId: UserId.Type): Quoted[ActionReturning[UserDbo, Index]] =
+		quote (
+			users
+				.filter(_.id == accountId)
+				.delete
+				.returning(_ => 1)
+		)
+	}

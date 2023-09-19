@@ -30,19 +30,21 @@ object Queries {
 			)
 	}
 	
-	implicit val insertToken: InsertMeta[TokenDbo] = insertMeta(_.id)
-	
-	implicit val updateToken: UpdateMeta[TokenDbo] = updateMeta(_.id, _.userId)
-	
 	private lazy val userTokens = quote(query[TokenDbo])
 	
 	
-	def getUserAccessTokenByValue(userAccessToken: AccessToken.Type): Quoted[Query[(TokenDbo, UserDbo)]] = {
+	def getUserAccessTokenWithUserByValue(userAccessToken: AccessToken): Quoted[Query[(TokenDbo, UserDbo)]] = {
 		val userQueries = com.ecom.point.users.repos.Queries
 		quote(
 			userTokens
 				.filter(_.accessToken == lift(userAccessToken))
 				.join(userQueries.users).on(_.userId == _.id)
+		)
+	}
+	
+	def getUserAccessTokenByValue(accessToken: AccessToken) = {
+		quote(
+			userTokens.filter(_.accessToken == lift(accessToken))
 		)
 	}
 	

@@ -11,7 +11,8 @@ final case class UserDbo(
 													activateDate: Option[ActivateDate],
 													blockDate: Option[BlockDate],
 													createdAt: CreatedDate,
-													lastLoginDate: Option[LastLoginDate]
+													lastLoginDate: Option[LastLoginDate],
+													salt: Salt
 												)
 
 
