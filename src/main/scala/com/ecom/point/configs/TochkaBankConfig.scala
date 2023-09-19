@@ -4,7 +4,7 @@ import zio.{Config, ZLayer}
 import zio.config.magnolia.deriveConfig
 import zio.config.typesafe.TypesafeConfigProvider
 
-final case class TochkaBankConfig(url: String, clientId: String, clientSecret: String)
+final case class TochkaBankConfig(url: String, clientId: String, clientSecret: String, redirectUri: String)
 
 object TochkaBankConfig {
 		val layer: ZLayer[Any, Config.Error, TochkaBankConfig] =
