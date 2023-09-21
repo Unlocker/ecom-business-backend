@@ -42,24 +42,5 @@ object AuthMiddleware{
 			}
 		}
 	}
-	
-	def bearerAuthZIO = new RequestHandlerMiddleware.Simple[AuthService, Any] {
-		override def apply[Env <: AuthService, Err >: Any](handler: Handler[Env, Err, Request, Response])(implicit trace: Trace): Handler[Env, Err, Request, Response] = {
-			Handler.fromFunctionZIO[Request] {request =>
-				request.headers.get(Header.Authorization) match {
-					case Some(Header.Authorization.Bearer(token)) =>
-						ZIO.serviceWithZIO[AuthService] { service =>
-							service.auth(AccessToken(token))
-								.mapBoth(
-									_ => ZIO.serviceWithZIO[AuthService](_.signIn(SignInRequest(PhoneNumber(""), Password(""))))
-										.mapBoth( _ => handler.runZIO(request), data =>  handler.runZIO(request).map(res => res.addHeader(Header.Authorization.Bearer(data.get.unwrap)))),
-									token => handler.runZIO(request).map(res => res.addHeader(Header.Authorization.Bearer(token._1.unwrap)))
-								)
-						}.flatten
-					case _ => handler.runZIO(request)
-				}
-			}
-		}
-	}
 }
 

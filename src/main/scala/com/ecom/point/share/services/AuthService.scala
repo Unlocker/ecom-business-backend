@@ -7,7 +7,7 @@ import com.ecom.point.users.models.{User, UserAccessToken}
 import com.ecom.point.users.repos.{UserDbo, UserRepository}
 import com.ecom.point.users.services.UserService
 import com.ecom.point.utils.SchemeConverter._
-import com.ecom.point.utils.{AppError, Unauthorized}
+import com.ecom.point.utils.{AppError, InternalError, ServiceError, Unauthorized}
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtTime}
@@ -25,7 +25,7 @@ import java.util.UUID
 trait AuthService {
 	def verify(inputHeader: Option[Header.Authorization]): Task[Option[Header.Authorization]]
 	def signUp(signUpRequest: SignUpRequest, salt: Salt): IO[Exception, Int]
-	def signIn(signInRequest: SignInRequest): Task[Option[AccessToken]]
+	def signIn(signInRequest: SignInRequest): Task[UserAccessToken]
 	def auth(userAccessToken: AccessToken): IO[AppError, (AccessToken, User)]
 	
 }
@@ -64,29 +64,24 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase], userServ
 		run(Queries.getUserAccessTokenByValue(AccessToken(tokenValue)))
 			.map(_.headOption)
 			.flatMap { token =>
-				println(token)
 				token match {
 					case None => ZIO.fail(Unauthorized())
 					case Some(token) => {
-						if (token.expirationTokenDate < ExpirationTokenDate(Instant.now())) {
+						if (token.expirationTokenDate > ExpirationTokenDate(Instant.now())) {
 							val clock: Clock = Clock.systemUTC()
-							println(clock)
 							val decodedToken = jwtDecode(token.accessToken)(SecretKey(token.refreshToken))
-							println(decodedToken)
 							val exAccess = decodedToken.flatMap(_.expiration)
-							println(exAccess)
 							val phoneNumber = decodedToken.flatMap(x => x.content.fromJson[AuthTokenHelper.PhoneNumberJwt].map(_.phone).toOption)
-							println(phoneNumber)
 							if (exAccess.exists(_ < JwtTime.nowSeconds(clock))) {
-								ZIO.attempt(Option(token.accessToken)).orElseFail(Unauthorized())
-							} else {
+								println(JwtTime.nowSeconds(clock))
 								val newAccessToken = jwtEncode(phoneNumber.get)(SecretKey(token.refreshToken))
-								val newToken = Seq(token.copy(accessToken = newAccessToken._1)).asModel(UserAccessToken.converterFromDbo)
+								val newToken = Seq(token.copy(accessToken = newAccessToken._1, expirationTokenDate = newAccessToken._2)).asModel(UserAccessToken.converterFromDbo)
 								run(Queries.updateUserAccessToken(newToken.head))
 									.mapBoth(_ => Unauthorized(), _ => Option(newAccessToken._1))
+							} else {
+								ZIO.attempt(Option(token.accessToken)).orElseFail(Unauthorized())
 							}
 						} else {
-							println("SSSSSSSSSSS")
 							ZIO.fail(Unauthorized())
 						}
 					}
@@ -94,10 +89,10 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase], userServ
 			}
 	}.orElseFail(Unauthorized())
 	
-	override def signIn(signInRequest: SignInRequest): Task[Option[AccessToken]] = {
-		def generateAcccesToken(maybeUser: Option[User]): Task[Option[AccessToken]] = {
+	override def signIn(signInRequest: SignInRequest): Task[UserAccessToken] = {
+		def generateAcccesToken(maybeUser: Option[User]): IO[AppError, UserAccessToken] = {
 			maybeUser match {
-				case None => ZIO.attempt(Option.empty[AccessToken])
+				case None => ZIO.fail(Unauthorized())
 				case Some(valueUser) => {
 					val clock: Clock = Clock.systemUTC()
 					val refreshTokenKey = SecretKey(valueUser.id, ExpirationTokenDate(clock.instant()))
@@ -109,8 +104,8 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase], userServ
 						expirationTokenDate = token._2,
 						userId = valueUser.id
 					)
-					run(Queries.createUserAccessToken(userToken))
-						.map { a => Option(a.accessToken)}
+					run(Queries.createOrUpdateUserAccessToken(userToken))
+						.mapBoth(_ => InternalError(), x => UserAccessToken.converterFromDbo(x))
 				}
 			}
 		}
@@ -130,7 +125,7 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase], userServ
 				tokenWithUser match {
 					case None => ZIO.fail(Unauthorized())
 					case Some((token, user)) => {
-						if (token.expirationTokenDate < ExpirationTokenDate(Instant.now())) {
+						if (token.expirationTokenDate > ExpirationTokenDate(Instant.now())) {
 							val clock: Clock = Clock.systemUTC()
 							val exAccess = jwtDecode(token.accessToken)(SecretKey(token.refreshToken)).flatMap(_.expiration)
 							if (exAccess.exists(_ < JwtTime.nowSeconds(clock))) {
@@ -179,11 +174,11 @@ object AuthTokenHelper{
 		implicit val clock: Clock = Clock.systemUTC()
 		val claim = JwtClaim {
 			json
-		}.issuedNow.expiresIn(300)
-		(AccessToken(Jwt.encode(claim, RefreshToken.unwrap(key.value), JwtAlgorithm.HS512)), ExpirationTokenDate(clock.instant().plusSeconds(300)))
+		}.issuedNow.expiresIn(60 * 15)
+		(AccessToken(Jwt.encode(claim, RefreshToken.unwrap(key.value), JwtAlgorithm.HS512)), ExpirationTokenDate(clock.instant().plusSeconds(60 * 15)))
 	}
 	
 	def jwtDecode(userAccessToken: AccessToken): SecretKey => Option[JwtClaim] = { key =>
-		Jwt.decode(AccessToken.unwrap(userAccessToken), RefreshToken.unwrap(key.value), Seq(JwtAlgorithm.HS512)).toOption
+		Jwt.decode(userAccessToken.unwrap, key.value.unwrap, Seq(JwtAlgorithm.HS512)).toOption
 	}
 }

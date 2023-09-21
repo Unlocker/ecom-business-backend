@@ -28,4 +28,9 @@ object EndpointData {
 	object SignInRequest {
 		implicit val signUpRequestSchema: Schema[SignInRequest] = DeriveSchema.gen[SignInRequest]
 	}
+	
+	final case class SignInResponse(accessToken: AccessToken, expirationTokenDate: ExpirationTokenDate)
+	object SignInResponse {
+		implicit val signUpResponseSchema: Schema[SignInResponse] = DeriveSchema.gen[SignInResponse]
+	}
 }

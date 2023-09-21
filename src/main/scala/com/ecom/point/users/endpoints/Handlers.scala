@@ -3,7 +3,8 @@ package com.ecom.point.users.endpoints
 import com.ecom.point.AuthMiddleware
 import com.ecom.point.share.services.AuthService
 import com.ecom.point.share.types.{AccessToken, Password, PhoneNumber}
-import com.ecom.point.users.endpoints.EndpointData.{ApiError, PasswordsNotEqual, PasswordsOrPhoneIncorrect, PhoneAlreadyUsed, SignInRequest, SignUpRequest}
+import com.ecom.point.users.endpoints.EndpointData.{ApiError, PasswordsNotEqual, PasswordsOrPhoneIncorrect, PhoneAlreadyUsed, SignInRequest, SignInResponse, SignUpRequest}
+import com.ecom.point.users.endpoints.Handlers.signOutIncomingMiddleware
 import com.ecom.point.users.services.UserService
 import zio.http.{Status => StatusResponse}
 import zio.http.Header._
@@ -17,7 +18,7 @@ import zio.http.endpoint._
 import zio.http.endpoint.openapi.OpenAPI.SecurityScheme.ApiKey.In
 import zio.{ZIO, ZNothing, http}
 
-import scala.reflect.runtime.universe.Typed
+import scala.reflect.runtime.universe.{Try, Typed}
 
 object Handlers {
 	import ApiError._
@@ -44,52 +45,47 @@ object Handlers {
 		}
 	
 	
-	private val signInEndpointMiddleware =
-		EndpointMiddleware(input = HttpCodec.authorization, output = HttpCodec.authorization, error = HttpCodec.empty)
-			.optional
+	private val signOutEndpointMiddleware =
+		EndpointMiddleware(input = HttpCodec.authorization, output = HttpCodec.empty, error = HttpCodec.empty)
+			.optionalIn
 	
-	private def signInIncomingMiddleware(input: Option[Authorization]): ZIO[AuthService, Unit, Option[Authorization]] = {
+	private def signOutIncomingMiddleware(input: Option[Authorization]): ZIO[AuthService, Unit, Option[Authorization]] = {
 		ZIO.serviceWithZIO[AuthService](_.verify(input)).orElseFail(ZIO.unit)
 	}
-	private def signInOutgoingMiddleware(output: Option[Authorization]) : ZIO[Any, ZNothing, Option[Authorization]] = {
-	 ZIO.succeed(output)
+	private def signInOutgoingMiddleware(output: Option[Authorization]) : ZIO[Any, ZNothing, Unit] = {
+	 ZIO.unit
 	}
 	
-	private val routes: RoutesMiddleware[AuthService, Option[Authorization], EndpointMiddleware.Typed[Option[Authorization], Unit, Option[Authorization]]] =
-		RoutesMiddleware.make(signInEndpointMiddleware)(signInIncomingMiddleware)(signInOutgoingMiddleware)
+	private val routes: RoutesMiddleware[AuthService, Option[Authorization], EndpointMiddleware.Typed[Option[Authorization], Unit, Unit]] =
+		RoutesMiddleware.make(signOutEndpointMiddleware)(signOutIncomingMiddleware)(signInOutgoingMiddleware)
 	
-	val signIn = Endpoint
+	private val signIn = Endpoint
 		.post(path = "api" / "v1" / "user" / "sign-in")
 		.in[SignInRequest]
-		.out[Unit]
-		.@@(signInEndpointMiddleware)
+		.out[SignInResponse]
 		.outErrors[ApiError](
 			HttpCodec.error[PasswordsOrPhoneIncorrect](StatusResponse.Conflict) ,
 			HttpCodec.error[PasswordsNotEqual](StatusResponse.Conflict)
 		)
 	
-	val signInHandler: Routes[AuthService, ApiError, EndpointMiddleware.Typed[Option[Authorization], Unit, Option[Authorization]]] =
+	private val signInHandler =
 		signIn.implement { signInRequest =>
 				ZIO.serviceWithZIO[AuthService](_.signIn(signInRequest))
-					.mapBoth(_ => PasswordsOrPhoneIncorrect(), data => data)
+					.mapBoth(_ => PasswordsOrPhoneIncorrect(), data => SignInResponse(data.accessToken, data.expirationTokenDate))
 		}
-//		.implement { req =>
-//			ZIO.serviceWithZIO[AuthService](_.signIn(req)).mapBoth( _ => PasswordsOrPhoneIncorrect(), data =>  data)
-//		}
-
-//
-//	val signOff = Endpoint
-//		.get(literal("sign-off"))
-//		.out[Int](zio.http.Status.NoContent)
-//		.implement { reg =>
-//			for {
-//				service <- ZIO.service[UserService]
-//				resp <- service.signOff(req)
-//			} yield resp
-//		}.toApp
 	
-//	val userEndpoints = (signUp ++ signIn) @@ Middlewares.authorization ++ signOff @@ Middlewares.authentification
-//	val authApi = signUp.toApp[UserService]
-val authApi = signUp.toApp ++ signInHandler.toApp(routes)// ++ AuthMiddleware.secure(signOut.toApp)
+
+
+	private val signOff = Endpoint
+		.get(path = "api" / "v1" / "user" / "sign-off")
+		.@@(signOutEndpointMiddleware)
+		.implement{ resp =>
+			Handler.fromFunctionZIO{ _ =>
+				ZIO.unit
+			}
+		}
+		
+	
+	val authApi = signUp.toApp ++ signInHandler.toApp ++ signOff.toApp(routes)// ++ AuthMiddleware.secure(signOut.toApp)
 }
 

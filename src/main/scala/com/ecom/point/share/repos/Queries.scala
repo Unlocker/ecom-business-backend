@@ -52,11 +52,12 @@ object Queries {
 		userTokens
 	)
 	
-	def createUserAccessToken(userAccessToken: UserAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = {
+	def createOrUpdateUserAccessToken(userAccessToken: UserAccessToken): Quoted[ActionReturning[TokenDbo, TokenDbo]] = {
 		val tokenDbo = userAccessToken.toDbo
 		quote(
 			userTokens
 				.insertValue(lift(tokenDbo))
+				.onConflictUpdate(_.userId)((e, n) => e.accessToken -> n.accessToken, (e, n) => e.refreshToken -> n.refreshToken, (e, n) => e.expirationTokenDate -> n.expirationTokenDate)
 				.returning(t => t)
 		)
 	}
@@ -75,7 +76,7 @@ object Queries {
 		val tokenDbo = userAccessToken.toDbo
 		quote(
 			userTokens
-				.filter(_.id == lift(tokenDbo.id))
+				.filter(_.userId == lift(tokenDbo.userId))
 				.updateValue(lift(tokenDbo))
 				.returning(acc => acc)
 		)
