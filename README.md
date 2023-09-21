@@ -49,7 +49,7 @@ Response {"tokenReceived": boolean, "redirectUrl": "url_string"}
 
 Используется code для получения и сохранения токена.
 
-[Auth] GET /api/v1/bank/TOCHKA/accept-oauth?code={code:string}&state={state:string}
+GET /api/v1/bank/TOCHKA/accept-oauth?code={code:string}&state={state:string}
 
 Response 200 {}
 
@@ -70,7 +70,7 @@ Response 200 {}
 
 ### Запрос истории операций по счёту
 
-[Auth] GET /api/v1/bank/TOCHKA/balance/{accountId}/statement/{startDate}/{endDate}
+[Auth] GET /api/v1/bank/TOCHKA/balance/{accountId}/transactions/{startDate}/{endDate}
 
 * accountId -- идентификатор счёта
 * startDate -- начальная дата периода, ISO 8601
