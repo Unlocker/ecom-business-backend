@@ -29,8 +29,10 @@ jobs:
         cache: 'sbt'
     - name: Run tests
       run: sbt test
+
+      # This step is not working because 401 error code received
       # Optional: This step uploads information to the GitHub dependency graph and unblocking Dependabot alerts for the repository
-    - name: Upload dependency graph
-      uses: scalacenter/sbt-dependency-submission@v2.2.0
-      with:
-        token: ${{ secrets.USER_TOKEN }}
+#    - name: Upload dependency graph
+#      uses: scalacenter/sbt-dependency-submission@v2.2.0
+#      with:
+#        token: ${{ secrets.USER_TOKEN }}

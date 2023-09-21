@@ -1,14 +1,19 @@
 package com.ecom.point.banks.endpoints
 
-import zio.schema.{DeriveSchema, Schema}
+import com.ecom.point.banks.models.BankAccountBalance
+import zio.schema._
 
 import java.net.URI
+import java.util.Currency
 
 object EndpointData {
 
   final case class TochkaBankAuthorizeResponse(tokenReceived: Boolean, redirectUrl: Option[URI])
 
-  object TochkaBankAuthorizeResponse {
-    implicit val tochkaBankAuthorizeResponseSchema: Schema[TochkaBankAuthorizeResponse] = DeriveSchema.gen[TochkaBankAuthorizeResponse]
-  }
+  final case class TochkaAcceptOauthQuery(code: String, state: String)
+
+  implicit val tochkaBankAuthorizeResponseSchema: Schema[TochkaBankAuthorizeResponse] = DeriveSchema.gen[TochkaBankAuthorizeResponse]
+  implicit val tochkaAcceptOauthQuerySchema: Schema[TochkaAcceptOauthQuery] = DeriveSchema.gen[TochkaAcceptOauthQuery]
+  implicit val currencySchema: Schema[Currency] = Schema.primitive[String].transform[Currency](Currency.getInstance, _.getCurrencyCode)
+  implicit val bankAccountBalanceSchema: Schema[BankAccountBalance] = DeriveSchema.gen[BankAccountBalance]
 }
