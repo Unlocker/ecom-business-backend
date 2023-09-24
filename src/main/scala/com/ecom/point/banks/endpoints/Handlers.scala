@@ -4,27 +4,49 @@ package com.ecom.point.banks.endpoints
 import com.ecom.point.banks.endpoints.EndpointData._
 import com.ecom.point.banks.models.BankAccountBalance
 import com.ecom.point.banks.services.TochkaBankService
+import com.ecom.point.share.services.AuthService
 import com.ecom.point.share.types.AccountId
 import com.ecom.point.users.models.User
-import zio.http.MediaType
+import zio.http.Header.Authorization
+import zio.http.{Handler, MediaType, Response}
 import zio.http.codec.HttpCodec._
-import zio.http.codec.{ContentCodec, PathCodec}
+import zio.http.codec.{ContentCodec, HttpCodec, PathCodec}
 import zio.http.endpoint.EndpointMiddleware._
 import zio.http.endpoint._
 import zio.{ZIO, ZNothing}
+import zio.http.Header._
 
 object Handlers {
-
+  
+  private val endpointMiddleware =
+    EndpointMiddleware(input = HttpCodec.authorization, output = HttpCodec.authorization , error = HttpCodec.empty)
+      .optional
+  
+  private def in(input: Option[Authorization]): ZIO[AuthService, ZNothing, Option[(User, Authorization)]] = {
+    ZIO.serviceWithZIO[AuthService](_.verifyAndReturnUser(input)).orDie
+  }
+  
+  private def out(output: Option[(User,Authorization)]): ZIO[Any, ZNothing, Option[Authorization]] = {
+    ZIO.succeed(output.map(_._2))
+  }
+  
+  private val routes: RoutesMiddleware[AuthService, Option[(User,Authorization)], EndpointMiddleware.Typed[Option[Authorization], Unit, Option[Authorization]]] =
+    RoutesMiddleware.make(endpointMiddleware)(in)(out)
+    
+  
   private val pathPrefix: PathCodec[Unit] = "api" / "v1" / "bank" / "TOCHKA"
-  val authorize: Routes[TochkaBankService, ZNothing, None] = Endpoint
+  
+  val authorize: Routes[TochkaBankService with AuthService, ZNothing, Typed[Option[Authorization], Unit, Option[Authorization]]] = Endpoint
     .get(path = pathPrefix / "authorize")
     .out[TochkaBankAuthorizeResponse]
-    .outCodec(ContentCodec.content[TochkaBankAuthorizeResponse](MediaType.application.json))
+    .@@(endpointMiddleware)
+    .header(authorization)
     .implement { req =>
-      val user: User = ???
-      ZIO.serviceWithZIO[TochkaBankService] { bankService =>
-        bankService.authorize(user).map(maybeUri => TochkaBankAuthorizeResponse(maybeUri.isEmpty, maybeUri)).orDie
-      }
+      val res = for{
+        user <- ZIO.serviceWithZIO[AuthService](_.getUserByAuthToken(req)).orDie
+        maybeUri <- ZIO.serviceWithZIO[TochkaBankService]{_.authorize(user.get)}.orDie
+      } yield TochkaBankAuthorizeResponse(maybeUri.isEmpty, maybeUri)
+      res
     }
 
   val acceptOauth = Endpoint
@@ -40,7 +62,6 @@ object Handlers {
 
   val balances = Endpoint
     .get(pathPrefix / "balance")
-    .outCodec(ContentCodec.content[List[BankAccountBalance]](MediaType.application.json))
     .implement { req =>
       val user: User = ???
 
@@ -71,17 +92,17 @@ object Handlers {
     }
 
 
-  //
-  //	def authorize: Routes[TochkaBankService with SttpClient, ZNothing, None] = {
-  //		Endpoint
-  //			.post(literal("authorize"))
-  //			.outCodec(ContentCodec.content[TochkaBankAuthorizeResponse](MediaType.application.json))
-  //			.implement{
-  //				for {
-  //					user <- ZIO.serviceWithZIO[TochkaBankService](_.authorize())
-  //				} yield()
-  //			}
-  //	}
+//
+//  	def authorize: Routes[TochkaBankService with SttpClient, ZNothing, None] = {
+//  		Endpoint
+//  			.post(literal("authorize"))
+//  			.outCodec(ContentCodec.content[TochkaBankAuthorizeResponse](MediaType.application.json))
+//  			.implement{
+//  				for {
+//  					user <- ZIO.serviceWithZIO[TochkaBankService](_.authorize())
+//  				} yield()
+//  			}
+//  	}
   //
   //	val clientBankApi: ZIO[TochkaBankService with UserService with SttpClient, Throwable, Unit] =  {}
 }

@@ -82,6 +82,7 @@ object Queries {
 		)
 	}
 	
+	
 	def deleteUserAceessToken(id: AccessTokenId.Type): Quoted[ActionReturning[TokenDbo, Index]] = quote(
 		userTokens
 			.filter(_.id == lift(id))

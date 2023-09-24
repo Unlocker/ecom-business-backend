@@ -1,31 +1,26 @@
 package com.ecom.point.users.endpoints
 
-import com.ecom.point.AuthMiddleware
 import com.ecom.point.share.services.AuthService
-import com.ecom.point.share.types.{AccessToken, Password, PhoneNumber}
-import com.ecom.point.users.endpoints.EndpointData.{ApiError, PasswordsNotEqual, PasswordsOrPhoneIncorrect, PhoneAlreadyUsed, SignInRequest, SignInResponse, SignUpRequest}
-import com.ecom.point.users.endpoints.Handlers.signOutIncomingMiddleware
-import com.ecom.point.users.services.UserService
-import zio.http.{Status => StatusResponse}
+import com.ecom.point.share.types.Password
+import com.ecom.point.users.endpoints.EndpointData._
 import zio.http.Header._
-import zio.http.RequestHandlerMiddleware.WithOut
-import zio.http._
-import zio.http.codec.{ContentCodec, Doc, HeaderCodec, HttpCodec, HttpCodecType, PathCodec, TextCodec}
+import zio.http.Method.GET
 import zio.http.codec.HttpCodec._
-import zio.http.codec.HttpCodecType.ResponseType
+import zio.http.codec.{ContentCodec, HttpCodec, PathCodec}
 import zio.http.endpoint.EndpointMiddleware._
 import zio.http.endpoint._
-import zio.http.endpoint.openapi.OpenAPI.SecurityScheme.ApiKey.In
-import zio.{ZIO, ZNothing, http}
-
-import scala.reflect.runtime.universe.{Try, Typed}
+import zio.http.{Status => StatusResponse, _}
+import zio.{ZIO, ZNothing}
 
 object Handlers {
 	import ApiError._
 	
+	val api: Path = Root / "api" / "v1" / "user"
+	val apiEndpoint: PathCodec[Unit] =  "api" / "v1" / "user"
+	
 	val signUp: Routes[AuthService, ApiError, None] =
 		Endpoint
-		.post(path = "api" / "v1" / "user" / "sign-up")
+		.post(path = apiEndpoint / "sign-up")
 		.inCodec(ContentCodec.content[SignUpRequest](MediaType.application.json))
 		.out[Unit]
 		.outErrors[ApiError](
@@ -60,7 +55,7 @@ object Handlers {
 		RoutesMiddleware.make(signOutEndpointMiddleware)(signOutIncomingMiddleware)(signInOutgoingMiddleware)
 	
 	private val signIn = Endpoint
-		.post(path = "api" / "v1" / "user" / "sign-in")
+		.post(path = apiEndpoint / "sign-in")
 		.in[SignInRequest]
 		.out[SignInResponse]
 		.outErrors[ApiError](
@@ -68,24 +63,28 @@ object Handlers {
 			HttpCodec.error[PasswordsNotEqual](StatusResponse.Conflict)
 		)
 	
-	private val signInHandler =
+	private val signInHandler = {
 		signIn.implement { signInRequest =>
-				ZIO.serviceWithZIO[AuthService](_.signIn(signInRequest))
-					.mapBoth(_ => PasswordsOrPhoneIncorrect(), data => SignInResponse(data.accessToken, data.expirationTokenDate))
+			ZIO.serviceWithZIO[AuthService](_.signIn(signInRequest))
+				.mapBoth(_ => PasswordsOrPhoneIncorrect(), data => SignInResponse(data.accessToken, data.expirationTokenDate))
+		}
+	}
+	
+		val app = Http.collectZIO[Request]{
+			case zio.http.Method.GET -> api / "sign-off" => ZIO.succeed(Response.ok.removeHeader("Authorization"))
 		}
 	
-
-
-	private val signOff = Endpoint
-		.get(path = "api" / "v1" / "user" / "sign-off")
-		.@@(signOutEndpointMiddleware)
-		.implement{ resp =>
-			Handler.fromFunctionZIO{ _ =>
-				ZIO.unit
-			}
-		}
-		
 	
-	val authApi = signUp.toApp ++ signInHandler.toApp ++ signOff.toApp(routes)// ++ AuthMiddleware.secure(signOut.toApp)
+	//	private val signOff = Endpoint
+	//		.get(path = "api" / "v1" / "user" / "sign-off")
+	//		.@@(signOutEndpointMiddleware)
+	//		.implement{ resp =>
+	//			Handler.fromFunctionZIO{ _ =>
+	//				ZIO.unit
+	//			}
+	//		}
+	
+	
+	val authApi = signUp.toApp ++ signInHandler.toApp ++ app // ++ signOff.toApp(routes)// ++ AuthMiddleware.secure(signOut.toApp)
 }
 

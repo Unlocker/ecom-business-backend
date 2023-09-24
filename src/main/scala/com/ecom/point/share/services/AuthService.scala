@@ -1,20 +1,18 @@
 package com.ecom.point.share.services
 
-import com.ecom.point.share.types._
 import com.ecom.point.share.repos.Queries
+import com.ecom.point.share.types._
 import com.ecom.point.users.endpoints.EndpointData.{SignInRequest, SignUpRequest}
 import com.ecom.point.users.models.{User, UserAccessToken}
-import com.ecom.point.users.repos.{UserDbo, UserRepository}
 import com.ecom.point.users.services.UserService
 import com.ecom.point.utils.SchemeConverter._
-import com.ecom.point.utils.{AppError, InternalError, ServiceError, Unauthorized}
+import com.ecom.point.utils.{AppError, InternalError, Unauthorized}
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtTime}
 import zio.http.Header
 import zio.http.Header.Authorization.Bearer
 import zio.json._
-import zio.json.ast.Json
 import zio.prelude._
 import zio.{&, IO, Task, ZIO, ZLayer}
 
@@ -24,6 +22,10 @@ import java.util.UUID
 
 trait AuthService {
 	def verify(inputHeader: Option[Header.Authorization]): Task[Option[Header.Authorization]]
+	
+	def verifyAndReturnUser(inputHeader: Option[Header.Authorization]): Task[Option[(User, Header.Authorization)]]
+	
+	def getUserByAuthToken(token: Header.Authorization): Task[Option[User]]
 	def signUp(signUpRequest: SignUpRequest, salt: Salt): IO[Exception, Int]
 	def signIn(signInRequest: SignInRequest): Task[UserAccessToken]
 	def auth(userAccessToken: AccessToken): IO[AppError, (AccessToken, User)]
@@ -36,8 +38,8 @@ object AuthService{
 
 final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase], userService: UserService) extends AuthService {
 	
-	import dataSource._
 	import AuthTokenHelper._
+	import dataSource._
 	
 	override def signUp(signUpRequest: SignUpRequest, salt: Salt): IO[Exception, Index] = {
 		val user = User(
@@ -55,12 +57,34 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase], userServ
 	
 	override def verify(inputHeader: Option[Header.Authorization]): Task[Option[Header.Authorization]] = {
 		inputHeader match {
-			case Some(Bearer(token)) => auth(token).map(_.map(value => Header.Authorization.Bearer(value.unwrap)))
+			case Some(Bearer(token)) => auth(token).map(_.map(value => Header.Authorization.Bearer(value.accessToken.unwrap)))
 			case None => ZIO.succeed(Option.empty[Header.Authorization])
 		}
 	}
 	
-	private def auth(tokenValue: String): IO[AppError, Option[AccessToken]] = {
+	override def verifyAndReturnUser(inputHeader: Option[Header.Authorization]): Task[Option[(User, Header.Authorization)]] = {
+		inputHeader match {
+			case Some(Bearer(token)) =>
+				val res = for {
+					tk <- auth(token)
+					user <- ZIO.fromOption(tk).flatMap(x => userService.getUserById(x.userId))
+				} yield (user zip tk).map { case (u, t) => (u, Header.Authorization.Bearer(t.accessToken.unwrap)) }
+				res.orElseFail(InternalError())
+			case None => ZIO.attempt(Option.empty[(User, Header.Authorization)])
+		}
+	}
+	
+	override def getUserByAuthToken(token: Header.Authorization): Task[Option[User]] = {
+		token match {
+			case Bearer(token) =>
+				run(Queries.getUserAccessTokenWithUserByValue(AccessToken(token)))
+					.map(_.headOption.map(_._2))
+					.asModel
+			case _ => ZIO.none
+		}
+	}
+	
+	private def auth(tokenValue: String): IO[AppError, Option[UserAccessToken]] = {
 		run(Queries.getUserAccessTokenByValue(AccessToken(tokenValue)))
 			.map(_.headOption)
 			.flatMap { token =>
@@ -75,11 +99,12 @@ final case class AuthServiceImpl(dataSource: Quill.Postgres[SnakeCase], userServ
 							if (exAccess.exists(_ < JwtTime.nowSeconds(clock))) {
 								println(JwtTime.nowSeconds(clock))
 								val newAccessToken = jwtEncode(phoneNumber.get)(SecretKey(token.refreshToken))
-								val newToken = Seq(token.copy(accessToken = newAccessToken._1, expirationTokenDate = newAccessToken._2)).asModel(UserAccessToken.converterFromDbo)
-								run(Queries.updateUserAccessToken(newToken.head))
-									.mapBoth(_ => Unauthorized(), _ => Option(newAccessToken._1))
+								val newToken = Option(token.copy(accessToken = newAccessToken._1, expirationTokenDate = newAccessToken._2)).asModel(UserAccessToken.converterFromDbo)
+								run(Queries.updateUserAccessToken(newToken.get))
+									.mapBoth(_ => Unauthorized(), _ => newToken)
 							} else {
-								ZIO.attempt(Option(token.accessToken)).orElseFail(Unauthorized())
+								ZIO.attempt(Option(UserAccessToken.converterFromDbo(token)))
+									.mapBoth(_ => Unauthorized(), z => z)
 							}
 						} else {
 							ZIO.fail(Unauthorized())
