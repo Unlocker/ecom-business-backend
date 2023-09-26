@@ -15,7 +15,7 @@ import zio.http.codec.HttpCodec._
 import zio.http.codec.{ContentCodec, HttpCodec, PathCodec}
 import zio.http.endpoint.EndpointMiddleware._
 import zio.http.endpoint._
-import zio.{URIO, ZIO, ZNothing}
+import zio.{URIO, ZIO, ZNothing, http}
 import zio.http.Header._
 
 import java.util.UUID
@@ -40,7 +40,7 @@ object Handlers {
 
   private val pathPrefix: PathCodec[Unit] = "api" / "v1" / "bank" / "TOCHKA"
 
-  val authorize: Routes[TochkaBankService with AuthService, ZNothing, Typed[Option[Authorization], Unit, Option[Authorization]]] = Endpoint
+  val authorize: http.App[TochkaBankService with AuthService] = Endpoint
     .get(path = pathPrefix / "authorize")
     .out[TochkaBankAuthorizeResponse]
     .@@(endpointMiddleware)
@@ -48,29 +48,23 @@ object Handlers {
     .implement { req =>
       val res = for {
         user <- ZIO.serviceWithZIO[AuthService](_.getUserByAuthToken(req)).orDie
-        maybeUri <- ZIO.serviceWithZIO[TochkaBankService] {
-          _.authorize(user.get)
-        }.orDie
+        maybeUri <- ZIO.serviceWithZIO[TochkaBankService] {_.authorize(user.get)}.orDie
       } yield TochkaBankAuthorizeResponse(maybeUri.isEmpty, maybeUri)
       res
-    }
+    }.toApp(routes)
 
-  val acceptOauth: Routes[TochkaBankService with UserService, ZNothing, ZNothing] = Endpoint
+  val acceptOauth:  http.App[TochkaBankService with AuthService] = Endpoint
     .get(path = pathPrefix / "accept-oauth" ^? paramStr("code") & paramStr("state"))
-    .implement { req: (String, String) =>
-      val code: String = req._1 // get for query parameter
-      val res: ZIO[TochkaBankService with UserService, Nothing, TochkaBankAuthorizeResponse] = for {
-        user <- ZIO.serviceWithZIO[UserService] {
-          _.getUserById(UserId(UUID.fromString(req._2)))
-        }.orDie
-        _ <- ZIO.serviceWithZIO[TochkaBankService] {
-          _.fetchToken(user.get, code)
-        }.orDie
-      } yield {
-        TochkaBankAuthorizeResponse(tokenReceived = true, Option.empty)
-      }
+    .out[TochkaBankAuthorizeResponse]
+    .@@(endpointMiddleware)
+    .header(authorization)
+    .implement { case  (code: String, state: String, auth:Authorization) =>
+      val res = for {
+        user <- ZIO.serviceWithZIO[AuthService] (_.getUserByAuthToken(auth)).orDie
+        _ <- ZIO.serviceWithZIO[TochkaBankService] {_.fetchToken(user.get, code)}.orDie
+      } yield TochkaBankAuthorizeResponse(tokenReceived = true, Option.empty)
       res
-    }
+    }.toApp(routes)
 
   val balances = Endpoint
     .get(pathPrefix / "balance")
