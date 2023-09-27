@@ -2,22 +2,20 @@ package com.ecom.point.banks.endpoints
 
 
 import com.ecom.point.banks.endpoints.EndpointData._
-import com.ecom.point.banks.models.BankAccountBalance
+import com.ecom.point.banks.models.{BankAccountBalance, BankTransaction}
 import com.ecom.point.banks.services.TochkaBankService
 import com.ecom.point.share.services.AuthService
 import com.ecom.point.share.types.{AccountId, UserId}
 import com.ecom.point.users.models.User
 import com.ecom.point.users.services.UserService
-import com.ecom.point.utils.AppError
+import com.ecom.point.utils.InternalError
 import zio.http.Header.Authorization
-import zio.http.{Handler, MediaType, Response}
 import zio.http.codec.HttpCodec._
-import zio.http.codec.{ContentCodec, HttpCodec, PathCodec}
-import zio.http.endpoint.EndpointMiddleware._
+import zio.http.codec.{HttpCodec, PathCodec}
 import zio.http.endpoint._
-import zio.{URIO, ZIO, ZNothing, http}
-import zio.http.Header._
+import zio.{ZIO, ZNothing, http}
 
+import java.time.LocalDate
 import java.util.UUID
 
 object Handlers {
@@ -48,54 +46,62 @@ object Handlers {
     .implement { req =>
       val res = for {
         user <- ZIO.serviceWithZIO[AuthService](_.getUserByAuthToken(req)).orDie
-        maybeUri <- ZIO.serviceWithZIO[TochkaBankService] {_.authorize(user.get)}.orDie
+        maybeUri <- ZIO.serviceWithZIO[TochkaBankService](_.authorize(user.get)).orDie
       } yield TochkaBankAuthorizeResponse(maybeUri.isEmpty, maybeUri)
       res
     }.toApp(routes)
 
-  val acceptOauth:  http.App[TochkaBankService with AuthService] = Endpoint
+  val acceptOauth: http.App[TochkaBankService with UserService] = Endpoint
     .get(path = pathPrefix / "accept-oauth" ^? paramStr("code") & paramStr("state"))
     .out[TochkaBankAuthorizeResponse]
-    .@@(endpointMiddleware)
-    .header(authorization)
-    .implement { case  (code: String, state: String, auth:Authorization) =>
+    .implement { case (code: String, state: String) =>
       val res = for {
-        user <- ZIO.serviceWithZIO[AuthService] (_.getUserByAuthToken(auth)).orDie
-        _ <- ZIO.serviceWithZIO[TochkaBankService] {_.fetchToken(user.get, code)}.orDie
+        user <- ZIO.serviceWithZIO[UserService](_.getUserById(UserId(UUID.fromString(state)))).orDie
+        _ <- ZIO.serviceWithZIO[TochkaBankService](_.fetchToken(user.get, code)).orDie
       } yield TochkaBankAuthorizeResponse(tokenReceived = true, Option.empty)
       res
+    }.toApp
+
+  val balances: http.App[TochkaBankService with AuthService] = Endpoint
+    .get(pathPrefix / "balance")
+    .out[List[BankAccountBalance]]
+    .@@(endpointMiddleware)
+    .header(authorization)
+    .implement { req: Authorization =>
+      for {
+        maybeUser <- ZIO.serviceWithZIO[AuthService](_.getUserByAuthToken(req)).orDie
+        balances <- ZIO.serviceWithZIO[TochkaBankService] { bankService =>
+          val user = maybeUser.get
+          bankService.tokenByUser(user).flatMap {
+            case Some(token) => bankService.balances(user, token)
+            case _ => ZIO.fail(InternalError(message = s"No token for USER=$user"))
+          }
+        }.orDie
+      } yield balances
     }.toApp(routes)
 
-  val balances = Endpoint
-    .get(pathPrefix / "balance")
-    .implement { req =>
-      val user: User = ???
-
-      /**
-       * val res = for {
-       * repo: BankRepository <- ZIO.serviceWithZIO[BankRepository]
-       * service: TochkaBankService <- ZIO.serviceWithZIO[TochkaBankService]
-       * } yield {
-       * repo.getBankAccessTokenByUserId(user.id).flatMap{
-       * case scala.None => ZIO.fail(InternalError(message = "empty token"))
-       * case Some(token) => service.balances(user, token)
-       * }
-       * }
-       * */
-      ???
-    }
-
-  val transactions = Endpoint
+  val transactions: http.App[TochkaBankService with AuthService] = Endpoint
     .get(
       pathPrefix / "balance" / PathCodec.string("accountId") / "transactions" / PathCodec.string("start")
         / PathCodec.string("end")
     )
+    .out[List[BankTransaction]]
+    .@@(endpointMiddleware)
+    .header(authorization)
     .implement {
-      case (accId, start, end) =>
-        val user: User = ???
-        val accountId = AccountId(accId)
-        ???
-    }
+      case (accId, start, end, auth) => for {
+        maybeUser <- ZIO.serviceWithZIO[AuthService](_.getUserByAuthToken(auth)).orDie
+        transactions <- ZIO.serviceWithZIO[TochkaBankService] { bankService =>
+          val user = maybeUser.get
+          bankService.tokenByUser(user).flatMap {
+            case Some(token) => bankService.transactions(user, token, AccountId(accId), LocalDate.parse(start), LocalDate.parse(end))
+            case _ => ZIO.fail(InternalError(message = s"No token for USER=$user"))
+          }.orDie
+        }
+      } yield {
+        transactions
+      }
+    }.toApp(routes)
 
 
   //

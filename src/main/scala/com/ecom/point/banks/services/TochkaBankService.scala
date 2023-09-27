@@ -20,6 +20,8 @@ import java.util.UUID
 trait TochkaBankService {
   def authorize(user: User): IO[AppError, Option[URI]]
 
+  def tokenByUser(user: User): IO[AppError, Option[BankAccessToken]]
+
   def fetchToken(user: User, code: String): IO[AppError, BankAccessToken]
 
   def refreshToken(user: User, token: BankAccessToken): IO[AppError, BankAccessToken]
@@ -33,6 +35,7 @@ trait TochkaBankService {
                     start: LocalDate,
                     end: LocalDate
                   ): IO[AppError, List[BankTransaction]]
+
 }
 
 object TochkaBankService {
@@ -320,5 +323,9 @@ final case class TochkaBankServiceLive(
           )
       }
       .mapError(errorHandler)
+  }
+
+  override def tokenByUser(user: User): IO[AppError, Option[BankAccessToken]] = {
+    bankRepository.getBankAccessTokenByUserId(user.id).mapError(errorHandler)
   }
 }

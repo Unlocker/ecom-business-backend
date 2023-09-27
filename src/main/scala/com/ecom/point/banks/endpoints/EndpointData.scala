@@ -1,6 +1,6 @@
 package com.ecom.point.banks.endpoints
 
-import com.ecom.point.banks.models.BankAccountBalance
+import com.ecom.point.banks.models.{BankAccountBalance, BankTransaction}
 import zio.schema._
 
 import java.net.URI
@@ -16,4 +16,5 @@ object EndpointData {
   implicit val tochkaAcceptOauthQuerySchema: Schema[TochkaAcceptOauthQuery] = DeriveSchema.gen[TochkaAcceptOauthQuery]
   implicit val currencySchema: Schema[Currency] = Schema.primitive[String].transform[Currency](Currency.getInstance, _.getCurrencyCode)
   implicit val bankAccountBalanceSchema: Schema[BankAccountBalance] = DeriveSchema.gen[BankAccountBalance]
+  implicit val bankTransactionSchema: Schema[BankTransaction] = DeriveSchema.gen[BankTransaction]
 }
