@@ -28,11 +28,6 @@ object Queries {
 			)
 	}
 
-	implicit val insert: InsertMeta[TokenDbo] = insertMeta(_.id)
-
-	implicit val update: UpdateMeta[TokenDbo] = updateMeta(_.id, _.userId)
-
-
 	def getBankAccessTokens: Quoted[EntityQuery[TokenDbo]] = quote(
 		query[TokenDbo]
 	)

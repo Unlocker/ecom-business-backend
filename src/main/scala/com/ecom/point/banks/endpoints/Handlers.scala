@@ -104,17 +104,5 @@ object Handlers {
     }.toApp(routes)
 
 
-  //
-  //  	def authorize: Routes[TochkaBankService with SttpClient, ZNothing, None] = {
-  //  		Endpoint
-  //  			.post(literal("authorize"))
-  //  			.outCodec(ContentCodec.content[TochkaBankAuthorizeResponse](MediaType.application.json))
-  //  			.implement{
-  //  				for {
-  //  					user <- ZIO.serviceWithZIO[TochkaBankService](_.authorize())
-  //  				} yield()
-  //  			}
-  //  	}
-  //
-  //	val clientBankApi: ZIO[TochkaBankService with UserService with SttpClient, Throwable, Unit] =  {}
+  val bankApi = authorize ++ acceptOauth ++ balances ++ transactions
 }
