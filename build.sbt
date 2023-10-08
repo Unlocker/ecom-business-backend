@@ -1,5 +1,5 @@
 import scala.collection.immutable.Seq
-import _root_.sbt._
+import _root_.sbt.*
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion := Scala.v213
@@ -49,11 +49,17 @@ val commonSettings = Seq(
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 
 
-lazy val root = (project in file("."))
+lazy val root = (project in file(".")).enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     name := "app",
     commonSettings
   )
+
+dockerBaseImage := "bellsoft/liberica-runtime-container:jdk-all-17.0.8.1-glibc"
+dockerUsername := Some("unlocker")
+Docker / packageName := "ecom-business-backend"
+dockerUpdateLatest := false
+Docker / dockerExposedPorts := Seq(8080)
 
 lazy val flyway = (project in file("modules/flyway"))
     .enablePlugins(FlywayPlugin)
